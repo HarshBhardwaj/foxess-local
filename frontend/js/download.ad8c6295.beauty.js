@@ -1,0 +1,239 @@
+(window["webpackJsonp"] = window["webpackJsonp"] || []).push([
+ ["download"], {
+  "0f78": function(t, e, a) {
+   "use strict";
+   a("b674")
+  },
+  "648c": function(t, e, a) {
+   "use strict";
+   a.r(e);
+   var r = function() {
+     var t = this,
+      e = t.$createElement,
+      a = t._self._c || e;
+     return a("div", {
+      staticClass: "download-content"
+     }, [a("div", {
+      staticClass: "download-log"
+     }, [a("div", {
+      staticStyle: {
+       "margin-bottom": "10px"
+      }
+     }, [t.showSelect ? a("el-select", {
+      attrs: {
+       size: "mini"
+      },
+      on: {
+       change: t.changeSelect
+      },
+      model: {
+       value: t.activeAddr,
+       callback: function(e) {
+        t.activeAddr = e
+       },
+       expression: "activeAddr"
+      }
+     }, t._l(t.devList, (function(t, e) {
+      return a("el-option", {
+       key: e,
+       attrs: {
+        label: (2 == t.type ? "HUB" : "INV") + " " + t.sn,
+        value: t.addr
+       }
+      })
+     })), 1) : t._e()], 1), a("el-row", {
+      attrs: {
+       gutter: 10
+      }
+     }, [a("el-col", {
+      attrs: {
+       span: 6
+      }
+     }, [a("a", {
+      attrs: {
+       href: "/api/v1/sunspec/log?addr=" + t.activeAddr + "&id=16",
+       target: "_blank"
+      }
+     }, [t._v("Error Record"), a("i", {
+      staticClass: "el-icon-download"
+     })])]), a("el-col", {
+      attrs: {
+       span: 6
+      }
+     }, [a("a", {
+      attrs: {
+       href: "/api/v1/sunspec/log?addr=" + t.activeAddr + "&id=144",
+       target: "_blank"
+      }
+     }, [t._v("Yearly Energy"), a("i", {
+      staticClass: "el-icon-download"
+     })])]), a("el-col", {
+      attrs: {
+       span: 6
+      }
+     }, [a("a", {
+      attrs: {
+       href: "/api/v1/sunspec/log?addr=" + t.activeAddr + "&id=128",
+       target: "_blank"
+      }
+     }, [t._v("Monthly Energy"), a("i", {
+      staticClass: "el-icon-download"
+     })])]), a("el-col", {
+      attrs: {
+       span: 6
+      }
+     }, [a("a", {
+      attrs: {
+       href: "/api/v1/sunspec/log?addr=" + t.activeAddr + "&id=112",
+       target: "_blank"
+      }
+     }, [t._v("Daily Energy"), a("i", {
+      staticClass: "el-icon-download"
+     })])])], 1), a("el-row", {
+      staticStyle: {
+       "margin-top": "30px"
+      },
+      attrs: {
+       gutter: 10
+      }
+     }, [a("el-col", {
+      attrs: {
+       span: 6
+      }
+     }, [a("a", {
+      attrs: {
+       href: "/api/v1/sunspec/log?addr=" + t.activeAddr + "&type=1",
+       target: "_blank"
+      }
+     }, [t._v("Running Log"), a("i", {
+      staticClass: "el-icon-download"
+     })])]), t.showIvData ? a("el-col", {
+      attrs: {
+       span: 6
+      }
+     }, [a("a", {
+      attrs: {
+       href: "/api/v1/sunspec/log?addr=" + t.activeAddr + "&id=160",
+       target: "_blank"
+      }
+     }, [t._v("IV Data"), a("i", {
+      staticClass: "el-icon-download"
+     })])]) : t._e(), a("el-col", {
+      attrs: {
+       span: 6
+      }
+     }, [a("a", {
+      attrs: {
+       href: "/api/v1/sunspec/log?addr=" + t.activeAddr + "&id=96",
+       target: "_blank"
+      }
+     }, [t._v("Power Curver"), a("i", {
+      staticClass: "el-icon-download"
+     })])])], 1)], 1), a("el-divider"), a("div", {
+      staticClass: "download-disturb"
+     }, [a("a", {
+      attrs: {
+       href: "/api/v1/sunspec/log?addr=" + t.activeAddr + "&type=4",
+       target: "_blank"
+      }
+     }, [t._v("Disturb Record"), a("i", {
+      staticClass: "el-icon-download"
+     })])])], 1)
+    },
+    n = [],
+    s = a("1da1"),
+    i = a("d4ec"),
+    c = a("bee2"),
+    o = a("262e"),
+    d = a("2caf"),
+    l = (a("96cf"), a("9ab4")),
+    u = a("1b40"),
+    v = a("c952"),
+    p = function(t) {
+     Object(o["a"])(a, t);
+     var e = Object(d["a"])(a);
+
+     function a() {
+      var t;
+      return Object(i["a"])(this, a), t = e.apply(this, arguments), t.devList = [], t.activeAddr = 1, t.showSelect = !1, t.showIvData = !1, t
+     }
+     return Object(c["a"])(a, [{
+      key: "getDevList",
+      value: function() {
+       var t = Object(s["a"])(regeneratorRuntime.mark((function t() {
+        var e;
+        return regeneratorRuntime.wrap((function(t) {
+         while (1) switch (t.prev = t.next) {
+          case 0:
+           return t.next = 2, Object(v["d"])();
+          case 2:
+           e = t.sent, this.devList = e.data.list, this.devList.length > 0 && (2 == this.devList[0].type ? this.showSelect = !0 : this.showSelect = !1, this.activeAddr = this.devList[0].addr);
+          case 5:
+          case "end":
+           return t.stop()
+         }
+        }), t, this)
+       })));
+
+       function e() {
+        return t.apply(this, arguments)
+       }
+       return e
+      }()
+     }, {
+      key: "activated",
+      value: function() {
+       var t = Object(s["a"])(regeneratorRuntime.mark((function t() {
+        var e;
+        return regeneratorRuntime.wrap((function(t) {
+         while (1) switch (t.prev = t.next) {
+          case 0:
+           return t.next = 2, Object(v["r"])();
+          case 2:
+           return e = t.sent, 0 === e.errno && (this.showIvData = "Smart WiLANII" === e.data.model || "RSmart-4G" === e.data.model), t.next = 6, this.getDevList();
+          case 6:
+          case "end":
+           return t.stop()
+         }
+        }), t, this)
+       })));
+
+       function e() {
+        return t.apply(this, arguments)
+       }
+       return e
+      }()
+     }, {
+      key: "changeSelect",
+      value: function() {
+       var t = Object(s["a"])(regeneratorRuntime.mark((function t(e) {
+        return regeneratorRuntime.wrap((function(t) {
+         while (1) switch (t.prev = t.next) {
+          case 0:
+           this.activeAddr = e;
+          case 1:
+          case "end":
+           return t.stop()
+         }
+        }), t, this)
+       })));
+
+       function e(e) {
+        return t.apply(this, arguments)
+       }
+       return e
+      }()
+     }]), a
+    }(u["c"]);
+   p = Object(l["a"])([Object(u["a"])({
+    name: "downloadContent"
+   })], p);
+   var h = p,
+    g = h,
+    w = (a("0f78"), a("0c7c")),
+    f = Object(w["a"])(g, r, n, !1, null, "0177c3c6", null);
+   e["default"] = f.exports
+  },
+  b674: function(t, e, a) {}
+ }
+]);

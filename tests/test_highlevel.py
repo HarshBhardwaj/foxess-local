@@ -1,0 +1,70 @@
+"""High-level measurement API tests (mock device, values from real captures)."""
+
+from __future__ import annotations
+
+import httpx
+import pytest
+
+from foxess.client import FoxESS
+
+
+@pytest.fixture
+def fox(sweep) -> FoxESS:
+    def handler(request: httpx.Request) -> httpx.Response:
+        addr = int(request.url.params["addr"])
+        mid = int(request.url.params["id"])
+        rec = sweep[(addr, mid)]
+        if rec.errno != 0:
+            return httpx.Response(200, json={"errno": rec.errno, "errmsg": rec.errmsg})
+        return httpx.Response(
+            200,
+            json={
+                "errno": 0, "errmsg": "success", "mstype": 2,
+                "data": {"id": mid, "reg_addr": rec.reg_addr, "tbl": rec.tbl_hex},
+            },
+        )
+
+    from foxess.transport import Transport
+
+    client = httpx.Client(base_url="http://mock", transport=httpx.MockTransport(handler))
+    return FoxESS("mock", transport=Transport("mock", client=client))
+
+
+def test_system(fox: FoxESS) -> None:
+    s = fox.system
+    assert s.model == "AIO-H1-11.4-US"
+    assert s.serial == "601U113057GH041"
+    assert s.device_address == 2
+
+
+def test_battery(fox: FoxESS) -> None:
+    b = fox.battery
+    assert b.soc_percent == 51.0
+    assert b.soh_percent == 100
+    assert b.voltage_v == 180.3
+    assert b.current_a == 9.8
+    assert b.temperature_c == 32.3
+    assert b.power_w == -1783
+    assert b.charging is True          # negative power = charging
+    assert b.energy_rated_wh == 11925
+
+
+def test_grid(fox: FoxESS) -> None:
+    g = fox.grid
+    assert g.frequency_hz == 59.98
+    assert g.voltage_v == 120.0
+    assert g.power_w == 0
+
+
+def test_solar(fox: FoxESS) -> None:
+    s = fox.solar
+    assert s.power_w == 1795
+    # Energy counters carry the En_SF ÷10 scale (verified against the UI):
+    assert s.total_energy_kwh == 315.9
+    assert s.daily_energy_kwh == 1.4
+
+
+def test_inverter_status(fox: FoxESS) -> None:
+    inv = fox.inverter
+    assert inv.temperature_c == 35.2
+    assert inv.inverter_state == 3

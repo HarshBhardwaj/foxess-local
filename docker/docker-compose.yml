@@ -1,0 +1,58 @@
+# FoxESS local stack. Set FOX_HOST to your device IP (e.g. in a .env file).
+# Optional integrations are behind profiles: `docker compose --profile full up`.
+
+services:
+  foxess-local:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: foxess-local:0.1.0
+    restart: unless-stopped
+    environment:
+      FOX_HOST: ${FOX_HOST:-192.168.1.38}
+      FOX_CORS_ORIGINS: ${FOX_CORS_ORIGINS:-*}
+      PORT: "8080"
+    ports:
+      - "${API_PORT:-8080}:8080"          # REST API + /metrics + /api/v1/ws
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    stop_grace_period: 15s
+
+  mqtt-bridge:
+    image: foxess-local:0.1.0
+    profiles: ["full", "mqtt"]
+    restart: unless-stopped
+    depends_on: [mosquitto]
+    environment:
+      FOX_HOST: ${FOX_HOST:-192.168.1.38}
+    command: ["sh", "-c", "fox mqtt ${FOX_HOST} --broker mosquitto --interval 15"]
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    profiles: ["full", "mqtt"]
+    restart: unless-stopped
+    ports: ["${MQTT_PORT:-1883}:1883"]
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  prometheus:
+    image: prom/prometheus:latest
+    profiles: ["full", "metrics"]
+    restart: unless-stopped
+    ports: ["${PROMETHEUS_PORT:-9090}:9090"]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    profiles: ["full", "metrics"]
+    restart: unless-stopped
+    ports: ["${GRAFANA_PORT:-3000}:3000"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    depends_on: [prometheus]

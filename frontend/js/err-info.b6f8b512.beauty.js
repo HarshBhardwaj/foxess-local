@@ -1,0 +1,225 @@
+(window["webpackJsonp"] = window["webpackJsonp"] || []).push([
+ ["err-info"], {
+  "3f0b": function(e, t, n) {},
+  "8bba": function(e, t, n) {
+   "use strict";
+   n("3f0b")
+  },
+  ffcb: function(e, t, n) {
+   "use strict";
+   n.r(t);
+   var r = function() {
+     var e = this,
+      t = e.$createElement,
+      n = e._self._c || t;
+     return n("div", {
+      staticClass: "system-info-content"
+     }, [n("div", {
+      staticClass: "decode-data"
+     }, [n("div", [e.showSelect ? n("el-select", {
+      attrs: {
+       size: "mini"
+      },
+      on: {
+       change: e.changeSelect
+      },
+      model: {
+       value: e.activeAddr,
+       callback: function(t) {
+        e.activeAddr = t
+       },
+       expression: "activeAddr"
+      }
+     }, e._l(e.devList, (function(e, t) {
+      return n("el-option", {
+       key: t,
+       attrs: {
+        label: (2 == e.type ? "HUB" : "INV") + " " + e.sn,
+        value: e.addr
+       }
+      })
+     })), 1) : e._e()], 1), n("span", {
+      staticClass: "model-label"
+     }, [e._v(e._s(e.$t("route.currentAlarms")))]), n("el-table", {
+      attrs: {
+       data: e.info,
+       size: "mini",
+       border: "",
+       fit: "",
+       stripe: !0
+      }
+     }, [n("el-table-column", {
+      attrs: {
+       label: e.$t("table.no"),
+       prop: "label",
+       width: "150"
+      },
+      scopedSlots: e._u([{
+       key: "default",
+       fn: function(t) {
+        return [n("span", [e._v(e._s(t.row.addr + 1))])]
+       }
+      }])
+     }), n("el-table-column", {
+      attrs: {
+       label: e.$t("table.dateTime"),
+       prop: "label"
+      },
+      scopedSlots: e._u([{
+       key: "default",
+       fn: function(t) {
+        return [n("span", [e._v(e._s(t.row.time))])]
+       }
+      }])
+     }), n("el-table-column", {
+      attrs: {
+       label: e.$t("table.errorCode"),
+       prop: "label",
+       width: "150"
+      },
+      scopedSlots: e._u([{
+       key: "default",
+       fn: function(t) {
+        return [n("span", [e._v(e._s(t.row.value))])]
+       }
+      }])
+     })], 1)], 1)])
+    },
+    a = [],
+    i = n("1da1"),
+    s = n("d4ec"),
+    c = n("bee2"),
+    u = n("262e"),
+    o = n("2caf"),
+    l = (n("96cf"), n("9ab4")),
+    d = n("1b40"),
+    f = n("c952"),
+    p = function(e) {
+     Object(u["a"])(n, e);
+     var t = Object(o["a"])(n);
+
+     function n() {
+      var e;
+      return Object(s["a"])(this, n), e = t.apply(this, arguments), e.info = [], e.devList = [], e.activeAddr = 1, e.showSelect = !1, e
+     }
+     return Object(c["a"])(n, [{
+      key: "getDevList",
+      value: function() {
+       var e = Object(i["a"])(regeneratorRuntime.mark((function e() {
+        var t;
+        return regeneratorRuntime.wrap((function(e) {
+         while (1) switch (e.prev = e.next) {
+          case 0:
+           return e.next = 2, Object(f["d"])();
+          case 2:
+           t = e.sent, this.devList = t.data.list, this.devList.length > 0 && (2 == this.devList[0].type ? this.showSelect = !0 : this.showSelect = !1, this.activeAddr = this.devList[0].addr);
+          case 5:
+          case "end":
+           return e.stop()
+         }
+        }), e, this)
+       })));
+
+       function t() {
+        return e.apply(this, arguments)
+       }
+       return t
+      }()
+     }, {
+      key: "created",
+      value: function() {
+       var e = Object(i["a"])(regeneratorRuntime.mark((function e() {
+        return regeneratorRuntime.wrap((function(e) {
+         while (1) switch (e.prev = e.next) {
+          case 0:
+          case "end":
+           return e.stop()
+         }
+        }), e)
+       })));
+
+       function t() {
+        return e.apply(this, arguments)
+       }
+       return t
+      }()
+     }, {
+      key: "activated",
+      value: function() {
+       var e = Object(i["a"])(regeneratorRuntime.mark((function e() {
+        return regeneratorRuntime.wrap((function(e) {
+         while (1) switch (e.prev = e.next) {
+          case 0:
+           return e.next = 2, this.getDevList();
+          case 2:
+           return e.next = 4, this.getInfo();
+          case 4:
+          case "end":
+           return e.stop()
+         }
+        }), e, this)
+       })));
+
+       function t() {
+        return e.apply(this, arguments)
+       }
+       return t
+      }()
+     }, {
+      key: "getInfo",
+      value: function() {
+       var e = Object(i["a"])(regeneratorRuntime.mark((function e() {
+        var t;
+        return regeneratorRuntime.wrap((function(e) {
+         while (1) switch (e.prev = e.next) {
+          case 0:
+           return e.next = 2, Object(f["e"])({
+            addr: this.activeAddr
+           });
+          case 2:
+           t = e.sent, 0 === t.errno && (this.info = t.data.err_info);
+          case 4:
+          case "end":
+           return e.stop()
+         }
+        }), e, this)
+       })));
+
+       function t() {
+        return e.apply(this, arguments)
+       }
+       return t
+      }()
+     }, {
+      key: "changeSelect",
+      value: function() {
+       var e = Object(i["a"])(regeneratorRuntime.mark((function e(t) {
+        return regeneratorRuntime.wrap((function(e) {
+         while (1) switch (e.prev = e.next) {
+          case 0:
+           this.activeAddr = t, this.getInfo();
+          case 2:
+          case "end":
+           return e.stop()
+         }
+        }), e, this)
+       })));
+
+       function t(t) {
+        return e.apply(this, arguments)
+       }
+       return t
+      }()
+     }]), n
+    }(d["c"]);
+   p = Object(l["a"])([Object(d["a"])({
+    name: "errInfo"
+   })], p);
+   var v = p,
+    h = v,
+    b = (n("8bba"), n("0c7c")),
+    w = Object(b["a"])(h, r, a, !1, null, "14bb26dd", null);
+   t["default"] = w.exports
+  }
+ }
+]);

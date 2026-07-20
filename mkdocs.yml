@@ -1,0 +1,12 @@
+site_name: foxess-local
+site_description: Local, evidence-first SDK for FoxESS Smart WiLAN devices
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - Discovery report: 01-technical-discovery-report.md
+  - Decoder & register map: 02-frontend-decoder-and-register-map.md
+  - SDK readme: 03-sdk-core-readme.md
+  - MQTT & Home Assistant: 04-mqtt-homeassistant.md
+  - Write path & endpoints: 05-write-path.md
+  - Deployment & security: 06-deployment-and-security.md
