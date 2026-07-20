@@ -1,11 +1,14 @@
 """Live example: print a one-line system summary (sync + async).
 
-    python examples/live_summary.py 192.168.1.38
+    export FOX_HOST=192.168.1.38
+    python examples/live_summary.py
+    # or: python examples/live_summary.py 192.168.1.38
 """
 
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 
 from foxess import AsyncFoxESS, FoxESS
@@ -25,7 +28,14 @@ async def async_summary(host: str) -> None:
 
 
 def main() -> None:
-    host = sys.argv[1] if len(sys.argv) > 1 else "192.168.1.38"
+    host = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("FOX_HOST", "").strip()
+    if not host:
+        print(
+            "Device IP required: set FOX_HOST or pass it as argv[1]\n"
+            "  export FOX_HOST=192.168.1.38 && python examples/live_summary.py",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
     sync_summary(host)
     asyncio.run(async_summary(host))
 
