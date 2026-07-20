@@ -20,8 +20,8 @@ RUN pip install --no-cache-dir /tmp/*.whl "foxess-local[api,mqtt,prometheus]" \
 
 USER fox
 
-ENV FOX_HOST=192.168.1.38 \
-    FOX_CORS_ORIGINS=* \
+# FOX_HOST must be provided at runtime (Compose .env or -e FOX_HOST=...).
+ENV FOX_CORS_ORIGINS=* \
     PORT=8080
 
 EXPOSE 8080
@@ -29,7 +29,7 @@ EXPOSE 8080
 # Read-only-filesystem compatible; no writable paths required at runtime.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD python -c "import os,urllib.request as u; \
-u.urlopen(f\"http://localhost:{os.environ.get('PORT','8080')}/api/v1/health\").read()" || exit 1
+    u.urlopen(f\"http://localhost:{os.environ.get('PORT','8080')}/api/v1/health\").read()" || exit 1
 
 # Serves REST API + /metrics + WebSocket. Override `command` for mqtt/exporter.
 CMD ["sh", "-c", "uvicorn --factory foxess.api:create_app --host 0.0.0.0 --port ${PORT:-8080}"]

@@ -1,7 +1,7 @@
 """High-level client: fetch + reassemble + decode in one call.
 
     from foxess import FoxESS
-    fox = FoxESS("192.168.1.38")
+    fox = FoxESS("<device-ip>")  # or os.environ["FOX_HOST"]
     common = fox.read_model(2, 1)
     print(common.get("Md"))          # 'AIO-H1-11.4-US'
 
