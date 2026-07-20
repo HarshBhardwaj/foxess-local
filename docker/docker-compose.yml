@@ -1,4 +1,4 @@
-# FoxESS local stack. Set FOX_HOST to your device IP (e.g. in a .env file).
+# FoxESS local stack. Set FOX_HOST in .env (required — no default).
 # Optional integrations are behind profiles: `docker compose --profile full up`.
 
 services:
@@ -9,7 +9,7 @@ services:
     image: foxess-local:0.1.0
     restart: unless-stopped
     environment:
-      FOX_HOST: ${FOX_HOST:-192.168.1.38}
+      FOX_HOST: ${FOX_HOST:?Set FOX_HOST in docker/.env to your device IP}
       FOX_CORS_ORIGINS: ${FOX_CORS_ORIGINS:-*}
       PORT: "8080"
     ports:
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
     depends_on: [mosquitto]
     environment:
-      FOX_HOST: ${FOX_HOST:-192.168.1.38}
+      FOX_HOST: ${FOX_HOST:?Set FOX_HOST in docker/.env to your device IP}
     command: ["sh", "-c", "fox mqtt ${FOX_HOST} --broker mosquitto --interval 15"]
     read_only: true
     security_opt: ["no-new-privileges:true"]
