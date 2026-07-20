@@ -35,10 +35,15 @@ termination (`stop_grace_period`), and environment-variable configuration
 
 Run a single integration instead of the API:
 
+````bash
 ```bash
-docker run --rm -e FOX_HOST=192.168.1.38 foxess-local:0.1.0 \
-  fox exporter 192.168.1.38 --port 9110
-```
+DEVICE=192.168.1.38
+docker run --rm -e FOX_HOST="$DEVICE" foxess-local:0.1.0 \
+  fox exporter "$DEVICE" --port 9110
+````
+
+`FOX_HOST` is required for the REST API entrypoint; CLI commands (`fox exporter`,
+`fox mqtt`, …) take the device IP as an explicit argument.
 
 ## Security model (read this)
 

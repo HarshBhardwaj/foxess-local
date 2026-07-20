@@ -9,13 +9,13 @@ observability/automation stack with Docker Compose.
 
 The Compose stack (`docker/docker-compose.yml`) can run up to five services:
 
-| Service | Image | Purpose | Default port |
-|---------|-------|---------|--------------|
-| `foxess-local` | built from `docker/Dockerfile` | REST API + `/metrics` + WebSocket | `8080` |
-| `mqtt-bridge` | same image | Publishes to MQTT + Home Assistant discovery | – |
-| `mosquitto` | `eclipse-mosquitto:2` | MQTT broker | `1883` |
-| `prometheus` | `prom/prometheus` | Scrapes `/metrics` | `9090` |
-| `grafana` | `grafana/grafana` | Dashboards (auto-provisioned) | `3000` |
+| Service        | Image                          | Purpose                                      | Default port |
+| -------------- | ------------------------------ | -------------------------------------------- | ------------ |
+| `foxess-local` | built from `docker/Dockerfile` | REST API + `/metrics` + WebSocket            | `8080`       |
+| `mqtt-bridge`  | same image                     | Publishes to MQTT + Home Assistant discovery | –            |
+| `mosquitto`    | `eclipse-mosquitto:2`          | MQTT broker                                  | `1883`       |
+| `prometheus`   | `prom/prometheus`              | Scrapes `/metrics`                           | `9090`       |
+| `grafana`      | `grafana/grafana`              | Dashboards (auto-provisioned)                | `3000`       |
 
 Only `foxess-local` runs by default. The rest are behind **profiles** so you opt
 in to exactly what you want (see §5).
@@ -61,14 +61,14 @@ Open Grafana at <http://localhost:3000> (login `admin` / your
 
 ## 4. Environment variables (`.env`)
 
-Put these in `docker/.env` (Compose reads it automatically). All are optional
-except `FOX_HOST`.
+Put these in `docker/.env` (Compose reads it automatically). **`FOX_HOST` is
+required**; everything else is optional.
 
-| Variable | Default | Used by | Description |
-|----------|---------|---------|-------------|
-| `FOX_HOST` | `192.168.1.38` | api, mqtt-bridge | **Your device's IP address.** The single value you must set. |
-| `FOX_CORS_ORIGINS` | `*` | api | Comma-separated allowed CORS origins for the REST API. Set to your dashboard origin(s) in production instead of `*`. |
-| `GRAFANA_PASSWORD` | `admin` | grafana | Grafana admin password. **Change this.** |
+| Variable           | Default      | Used by          | Description                                                                                                          |
+| ------------------ | ------------ | ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `FOX_HOST`         | _(required)_ | api, mqtt-bridge | **Your device's IP address.** Compose fails fast if unset.                                                           |
+| `FOX_CORS_ORIGINS` | `*`          | api              | Comma-separated allowed CORS origins for the REST API. Set to your dashboard origin(s) in production instead of `*`. |
+| `GRAFANA_PASSWORD` | `admin`      | grafana          | Grafana admin password. **Change this.**                                                                             |
 
 ### Host port mapping
 
@@ -76,12 +76,12 @@ Every published port's **host side** is configurable, so you can avoid clashes
 with anything already running (the container-internal ports are fixed, so
 Prometheus scraping keeps working regardless).
 
-| Variable | Default | Service | Host port for |
-|----------|---------|---------|---------------|
-| `API_PORT` | `8080` | foxess-local | REST API + `/metrics` + WebSocket |
-| `MQTT_PORT` | `1883` | mosquitto | MQTT broker |
-| `PROMETHEUS_PORT` | `9090` | prometheus | Prometheus UI |
-| `GRAFANA_PORT` | `3000` | grafana | Grafana UI |
+| Variable          | Default | Service      | Host port for                     |
+| ----------------- | ------- | ------------ | --------------------------------- |
+| `API_PORT`        | `8080`  | foxess-local | REST API + `/metrics` + WebSocket |
+| `MQTT_PORT`       | `1883`  | mosquitto    | MQTT broker                       |
+| `PROMETHEUS_PORT` | `9090`  | prometheus   | Prometheus UI                     |
+| `GRAFANA_PORT`    | `3000`  | grafana      | Grafana UI                        |
 
 > **`Bind for 0.0.0.0:8080 failed: port is already allocated`** — something else
 > on the host owns that port. Set `API_PORT` to a free port in `.env` and
@@ -92,10 +92,10 @@ Prometheus scraping keeps working regardless).
 Environment variables consumed by the SDK process itself (set them under a
 service's `environment:` if needed):
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `FOX_HOST` | `192.168.1.38` | Device IP used by the REST `create_app()` factory and `/metrics`. |
-| `FOX_CORS_ORIGINS` | `*` | CORS origins (see above). |
+| Variable           | Default      | Description                                                       |
+| ------------------ | ------------ | ----------------------------------------------------------------- |
+| `FOX_HOST`         | _(required)_ | Device IP used by the REST `create_app()` factory and `/metrics`. |
+| `FOX_CORS_ORIGINS` | `*`          | CORS origins (see above).                                         |
 
 > **Writes are never enabled in the container.** The REST API is read-only and
 > never exposes `write_field`; there is no environment flag that turns on writes.
@@ -116,12 +116,12 @@ GRAFANA_PASSWORD=change-me-please
 
 ## 5. Compose profiles
 
-| Profile | Brings up | Use when |
-|---------|-----------|----------|
-| *(none)* | `foxess-local` | You only want the local REST/metrics/ws API. |
-| `metrics` | `foxess-local`, `prometheus`, `grafana` | You want dashboards + time-series history. |
-| `mqtt` | `foxess-local`, `mosquitto`, `mqtt-bridge` | You want Home Assistant / MQTT. |
-| `full` | everything | Full stack. |
+| Profile   | Brings up                                  | Use when                                     |
+| --------- | ------------------------------------------ | -------------------------------------------- |
+| _(none)_  | `foxess-local`                             | You only want the local REST/metrics/ws API. |
+| `metrics` | `foxess-local`, `prometheus`, `grafana`    | You want dashboards + time-series history.   |
+| `mqtt`    | `foxess-local`, `mosquitto`, `mqtt-bridge` | You want Home Assistant / MQTT.              |
+| `full`    | everything                                 | Full stack.                                  |
 
 ```bash
 docker compose --profile metrics up -d      # API + Prometheus + Grafana
@@ -178,13 +178,15 @@ mosquitto_sub -h localhost -t 'fox/#' -v
 The same image is a CLI. Run just the exporter or the MQTT bridge:
 
 ```bash
+DEVICE=192.168.1.38
+
 # Prometheus exporter only, on port 9110
-docker run --rm -p 9110:9110 -e FOX_HOST=192.168.1.38 \
-  foxess-local:0.1.0 fox exporter 192.168.1.38 --bind 0.0.0.0 --port 9110
+docker run --rm -p 9110:9110 -e FOX_HOST="$DEVICE" \
+  foxess-local:0.1.0 fox exporter "$DEVICE" --bind 0.0.0.0 --port 9110
 
 # MQTT bridge only, to an existing broker
-docker run --rm -e FOX_HOST=192.168.1.38 \
-  foxess-local:0.1.0 fox mqtt 192.168.1.38 --broker 192.168.1.10 --interval 15
+docker run --rm -e FOX_HOST="$DEVICE" \
+  foxess-local:0.1.0 fox mqtt "$DEVICE" --broker 192.168.1.10 --interval 15
 ```
 
 Point your existing Prometheus at the API's `/metrics`:
@@ -193,7 +195,7 @@ Point your existing Prometheus at the API's `/metrics`:
 scrape_configs:
   - job_name: foxess-local
     static_configs:
-      - targets: ["<docker-host>:8080"]
+      - targets: ['<docker-host>:8080']
 ```
 
 ---
@@ -224,14 +226,14 @@ Network hardening (the device APIs are unauthenticated — see
 
 ## 10. Troubleshooting
 
-| Symptom | Likely cause / fix |
-|---------|--------------------|
+| Symptom                       | Likely cause / fix                                                                                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/api/v1/battery` returns 503 | Container can't reach the device. Check `FOX_HOST`, VLAN/firewall, and that the device answers `curl http://$FOX_HOST/api/v1/sunspec/data?addr=2&id=1`. |
-| Health OK but metrics empty | The device is reachable but a model read failed; check `docker compose logs foxess-local` and `fox_poll_errors_total`. |
-| Prometheus target DOWN | `prometheus.yml` targets `foxess-local:8080`; ensure both are on the same Compose network (they are by default). |
-| Grafana has no data | Confirm the Prometheus datasource is green (Grafana → Connections) and the exporter is being scraped. |
-| MQTT entities missing in HA | Confirm `mqtt-bridge` logs show "connected"; check the broker host and that HA's MQTT integration uses the same broker. |
-| Load/grid power shows 0 | Expected without a CT meter on the inverter (the cloud derives those). Solar/battery are always populated. |
+| Health OK but metrics empty   | The device is reachable but a model read failed; check `docker compose logs foxess-local` and `fox_poll_errors_total`.                                  |
+| Prometheus target DOWN        | `prometheus.yml` targets `foxess-local:8080`; ensure both are on the same Compose network (they are by default).                                        |
+| Grafana has no data           | Confirm the Prometheus datasource is green (Grafana → Connections) and the exporter is being scraped.                                                   |
+| MQTT entities missing in HA   | Confirm `mqtt-bridge` logs show "connected"; check the broker host and that HA's MQTT integration uses the same broker.                                 |
+| Load/grid power shows 0       | Expected without a CT meter on the inverter (the cloud derives those). Solar/battery are always populated.                                              |
 
 ---
 

@@ -28,8 +28,19 @@ FoxProvider = Callable[[], Awaitable[AsyncFoxESS]]
 API_PREFIX = "/api/v1"
 
 
+def _fox_host() -> str:
+    """Device IP from ``FOX_HOST``. Required — no hardcoded fallback."""
+    host = os.environ.get("FOX_HOST", "").strip()
+    if not host:
+        raise RuntimeError(
+            "FOX_HOST is not set. Set it to your FoxESS device IP "
+            "(e.g. in docker/.env or export FOX_HOST=...)."
+        )
+    return host
+
+
 def _default_provider() -> FoxProvider:
-    host = os.environ.get("FOX_HOST", "192.168.1.38")
+    host = _fox_host()
 
     async def provide() -> AsyncFoxESS:
         return AsyncFoxESS(host)
@@ -166,7 +177,7 @@ def create_app(provider: FoxProvider | None = None) -> Any:
         except ImportError:
             raise HTTPException(status_code=501, detail="prometheus extra not installed") from None
 
-        host = os.environ.get("FOX_HOST", "192.168.1.38")
+        host = _fox_host()
 
         def _render() -> bytes:
             with FoxESS(host) as fox:
