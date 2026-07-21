@@ -70,8 +70,13 @@ def test_state_payloads_from_real_views(fox: FoxESS) -> None:
     battery = json.loads(states["fox/battery"])
     assert battery["soc_percent"] == 51.0
     assert battery["voltage_v"] == 180.3
+    assert battery["energy_discharged_total_kwh"] == 335.2
+    # Net grid flow (model 65031 HubInfo, gateway addr) on fox/grid; AC freq on fox/ac.
     grid = json.loads(states["fox/grid"])
-    assert grid["frequency_hz"] == 59.98
+    assert grid["power_w"] == -959                    # negative = import
+    assert grid["import_energy_total_kwh"] == 3660.5  # real Hub meter counter
+    ac = json.loads(states["fox/ac"])
+    assert ac["frequency_hz"] == 59.98
 
 
 class _FakeClient:

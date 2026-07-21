@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "foxess-local"
-version = "0.1.0"
+version = "0.3.0"
 description = "Fully-local, evidence-first SDK for FoxESS Smart WiLAN devices (no FoxCloud)."
 readme = "README.md"
 requires-python = ">=3.10"

@@ -29,14 +29,22 @@ _GAUGES: tuple[tuple[str, str, str, str], ...] = (
     ("fox_battery_voltage_volts", "Battery voltage", "battery", "voltage_v"),
     ("fox_battery_current_amps", "Battery current", "battery", "current_a"),
     ("fox_battery_power_watts", "Battery power (negative=charging)", "battery", "power_w"),
+    ("fox_battery_charge_power_watts", "Battery charge power (>=0)",
+     "battery", "charge_power_w"),
+    ("fox_battery_discharge_power_watts", "Battery discharge power (>=0)",
+     "battery", "discharge_power_w"),
     ("fox_battery_temperature_celsius", "Battery temperature", "battery", "temperature_c"),
     ("fox_battery_remaining_energy_wh", "Battery available energy",
      "battery", "energy_available_wh"),
-    ("fox_grid_power_watts", "Inverter AC / grid power", "grid", "power_w"),
-    ("fox_grid_voltage_volts", "Grid voltage (L1-N)", "grid", "voltage_v"),
-    ("fox_grid_current_amps", "Grid current (L1)", "grid", "current_a"),
-    ("fox_grid_frequency_hertz", "Grid frequency", "grid", "frequency_hz"),
-    ("fox_grid_power_factor", "Power factor", "grid", "power_factor"),
+    # Net grid flow (model 65004). power_w is signed; import/export are split (>=0).
+    ("fox_grid_power_watts", "Net grid power (signed)", "grid", "power_w"),
+    ("fox_grid_import_power_watts", "Grid import power (>=0)", "grid", "import_power_w"),
+    ("fox_grid_export_power_watts", "Grid export power (>=0)", "grid", "export_power_w"),
+    # AC terminal (model 701). Voltage/current/frequency are the inverter AC output.
+    ("fox_grid_voltage_volts", "AC voltage (L1-N)", "ac", "voltage_v"),
+    ("fox_grid_current_amps", "AC current (L1)", "ac", "current_a"),
+    ("fox_grid_frequency_hertz", "Grid frequency", "ac", "frequency_hz"),
+    ("fox_grid_power_factor", "Power factor", "ac", "power_factor"),
     ("fox_pv_power_watts", "PV / DC power", "solar", "power_w"),
     ("fox_load_power_watts", "Site load power (needs CT meter)", "load", "power_w"),
     ("fox_inverter_temperature_celsius", "Inverter heat-sink temperature",
@@ -47,12 +55,21 @@ _GAUGES: tuple[tuple[str, str, str, str], ...] = (
 
 # Monotonic energy counters (Prometheus counter semantics).
 _COUNTERS: tuple[tuple[str, str, str, str], ...] = (
-    ("fox_grid_energy_injected_wh_total", "Total energy injected to grid",
-     "grid", "energy_injected_wh"),
+    ("fox_ac_energy_injected_wh_total", "Total energy injected at AC terminal",
+     "ac", "energy_injected_wh"),
     ("fox_pv_energy_total_kwh_total", "Lifetime PV generation", "solar", "total_energy_kwh"),
+    ("fox_battery_energy_charged_kwh_total", "Lifetime battery charge energy",
+     "battery", "energy_charged_total_kwh"),
+    ("fox_battery_energy_discharged_kwh_total", "Lifetime battery discharge energy",
+     "battery", "energy_discharged_total_kwh"),
+    # Grid import/export energy from the Hub aggregate meter (model 65031).
+    ("fox_grid_import_energy_kwh_total", "Lifetime grid import energy",
+     "grid", "import_energy_total_kwh"),
+    ("fox_grid_export_energy_kwh_total", "Lifetime grid export energy",
+     "grid", "export_energy_total_kwh"),
 )
 
-_GROUPS = ("battery", "grid", "solar", "load", "inverter")
+_GROUPS = ("battery", "grid", "ac", "solar", "load", "inverter")
 
 
 @dataclass

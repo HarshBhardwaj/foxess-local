@@ -17,8 +17,8 @@ versions before tagging.
 
 ## Verification against hardware (optional, HIL)
 
-- [ ] `fox scan <ip> 2` matches the supported-model matrix
-- [ ] `fox read <ip> 2 1` returns correct identity
+- [ ] `fox scan "$FOX_HOST" 2` matches the supported-model matrix
+- [ ] `fox read "$FOX_HOST" 2 1` returns correct identity
 - [ ] Spot-check a scaled measurement against the FoxCloud dashboard
 - [ ] (If touching writes) `write_field(..., dry_run=True)` frame reviewed by a
       second person before any real write

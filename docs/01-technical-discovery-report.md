@@ -8,7 +8,7 @@ Date: 2026-07-20
 
 ## 1. Purpose and scope
 
-This report documents what has been *empirically established* about the local
+This report documents what has been _empirically established_ about the local
 FoxESS "Smart WiLAN" HTTP/Modbus protocol from captured device traffic, before
 any production code is written. It is the governing reference for the SDK: every
 later decoder and model definition is checked against the facts recorded here.
@@ -27,13 +27,13 @@ confidence level:
 
 ## 2. Evidence base
 
-| Source | What it is | Role |
-|--------|------------|------|
-| `full_sweep_raw.txt` | A `curl` sweep of `GET /api/v1/sunspec/data` for every model ID at `addr=1` and `addr=2` (58 responses) | Primary raw `tbl` payloads |
-| `UI-Dashboard.png` | The Smart WiLAN "Device Monitoring" page rendering model 1 (Common) for the inverter | UI cross-check + model-name taxonomy |
-| `Login-NetworkCall.png` | Safari Web Inspector view of the `POST /api/v1/sunspec/login` request | Auth flow + frontend bundle inventory |
-| `cli-curl` (cookie jar) | The cookie used for the sweep | Auth mechanism |
-| `tools/parse_sweep.py`, `tools/investigate.py` | Deterministic parsers used to produce every number in this report | Reproducibility |
+| Source                                         | What it is                                                                                              | Role                                  |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `full_sweep_raw.txt`                           | A `curl` sweep of `GET /api/v1/sunspec/data` for every model ID at `addr=1` and `addr=2` (58 responses) | Primary raw `tbl` payloads            |
+| `UI-Dashboard.png`                             | The Smart WiLAN "Device Monitoring" page rendering model 1 (Common) for the inverter                    | UI cross-check + model-name taxonomy  |
+| `Login-NetworkCall.png`                        | Safari Web Inspector view of the `POST /api/v1/sunspec/login` request                                   | Auth flow + frontend bundle inventory |
+| `cli-curl` (cookie jar)                        | The cookie used for the sweep                                                                           | Auth mechanism                        |
+| `tools/parse_sweep.py`, `tools/investigate.py` | Deterministic parsers used to produce every number in this report                                       | Reproducibility                       |
 
 All parsing is scripted and re-runnable; no value in this document was read by eye
 from a hex dump.
@@ -43,14 +43,14 @@ from a hex dump.
 Decoded from the SunSpec Common model (id=1), and confirmed field-for-field
 against the UI dashboard:
 
-| | Gateway (`addr=1`) | Inverter (`addr=2`) |
-|---|---|---|
-| Manufacturer | FOX | FOX |
-| Model | `FOX Hub G2` | `AIO-H1-11.4-US` |
-| Options | `FOX Hub(G2)` | `AIO US` |
-| Version | `1.1.0a.51` | `1.1.11.8c` |
-| Serial | `60HUB0000000000` | `601U10000000000` |
-| Modbus device address | 1 | 2 |
+|                       | Gateway (`addr=1`) | Inverter (`addr=2`) |
+| --------------------- | ------------------ | ------------------- |
+| Manufacturer          | FOX                | FOX                 |
+| Model                 | `FOX Hub G2`       | `AIO-H1-11.4-US`    |
+| Options               | `FOX Hub(G2)`      | `AIO US`            |
+| Version               | `1.1.0a.51`        | `1.1.11.8c`         |
+| Serial                | `60HUB0000000000`  | `601U10000000000`   |
+| Modbus device address | 1                  | 2                   |
 
 Firmware sub-component versions decoded from model 65005 (`DER property info`):
 
@@ -62,16 +62,16 @@ Firmware sub-component versions decoded from model 65005 (`DER property info`):
 
 ## 3. HTTP API surface
 
-Base URL: `http://<device-ip>/` — **plain HTTP, port 80** (observed
-`192.168.1.38:80`). The device serves a Vue + Element-UI single-page app called
+Base URL: `http://$FOX_HOST/` — **plain HTTP, port 80** (observed on a
+LAN device at port 80). The device serves a Vue + Element-UI single-page app called
 "Smart WiLAN".
 
 ### 3.1 Endpoints (VERIFIED where captured)
 
-| Method | Path | Purpose | Evidence |
-|--------|------|---------|----------|
-| `GET` | `/api/v1/sunspec/data?addr={addr}&id={id}` | Read one SunSpec/private model from one Modbus device | Full sweep capture |
-| `POST` | `/api/v1/sunspec/login` | Create the `admin` username cookie | Login capture |
+| Method | Path                                       | Purpose                                               | Evidence           |
+| ------ | ------------------------------------------ | ----------------------------------------------------- | ------------------ |
+| `GET`  | `/api/v1/sunspec/data?addr={addr}&id={id}` | Read one SunSpec/private model from one Modbus device | Full sweep capture |
+| `POST` | `/api/v1/sunspec/login`                    | Create the `admin` username cookie                    | Login capture      |
 
 Static assets observed in the login capture (frontend bundle, locally fetchable —
 a future evidence source for the private-model decoders): `app.65f25470.js`,
@@ -92,8 +92,12 @@ Additional endpoints (e.g. write/config, `sys_info` payload, firmware) are
 Every response is JSON with a stable envelope:
 
 ```json
-{ "errno": 0, "errmsg": "success", "mstype": 2,
-  "data": { "id": 701, "reg_addr": 40070, "tbl": "0103BA…07C7" } }
+{
+  "errno": 0,
+  "errmsg": "success",
+  "mstype": 2,
+  "data": { "id": 701, "reg_addr": 40070, "tbl": "0103BA…07C7" }
+}
 ```
 
 - `errno` — `0` on success; non-zero is an error (see §7).
@@ -111,9 +115,9 @@ On error, `data` is omitted entirely.
 ## 4. The `tbl` transport encoding — key finding
 
 **`tbl` is not a single Modbus frame. It is one or more concatenated Modbus RTU
-`Read Holding Registers` (function `0x03`) *response* frames, each with its own
+`Read Holding Registers` (function `0x03`) _response_ frames, each with its own
 valid CRC-16/Modbus, whose register payloads join to form the full model block.**
-(VERIFIED — 38 of 39 successful responses validate with *every* constituent frame
+(VERIFIED — 38 of 39 successful responses validate with _every_ constituent frame
 CRC-correct.)
 
 ### 4.1 Single Modbus RTU response frame layout (VERIFIED)
@@ -162,7 +166,7 @@ After reassembly, the register payload follows SunSpec conventions:
 
 Two Modbus devices sit behind one WiLAN HTTP endpoint:
 
-- **`addr=1` — Fox Hub G2 gateway.** Serves model 1 and a *subset* of models
+- **`addr=1` — Fox Hub G2 gateway.** Serves model 1 and a _subset_ of models
   (see §6). Several of its "supported" models return placeholder payloads (§8).
 - **`addr=2` — AIO-H1-11.4-US inverter.** Serves the full model set and is the
   source of all real measurement data.
@@ -178,37 +182,37 @@ primitive, not `id` alone, and must not assume the gateway mirrors the inverter.
 `✗ (e)` = `errno e`. `⚠` = anomaly (§8). Model names are the frontend's own
 labels from the UI.
 
-| ID | Name | reg_addr | Gateway `addr=1` | Inverter `addr=2` |
-|----|------|----------|------------------|-------------------|
-| 1 | Common | 40000 | ✓ 66r | ✓ 66r |
-| 701 | DER AC Measurement | 40070 | ⚠ 877r (placeholder) | ✓ 153r |
-| 702 | DER Capacity | 40225 | ✗ (20002) | ✓ 50r |
-| 703 | DER Enter Service | 40277 | ✗ (20002) | ✓ 17r |
-| 704 | DER AC Controls | 40296 | ✗ (20002) | ✓ 65r |
-| 705 | DER Volt-Var | 40363 | ✗ (20002) | ✓ 91r |
-| 706 | DER Volt-Watt | 40456 | ✗ (20002) | ✓ 76r |
-| 707 | DER Trip LV | 40534 | ✗ (20002) | ✓ 56r |
-| 708 | DER Trip HV | 40592 | ✗ (20002) | ✓ 56r |
-| 709 | DER Trip LF | 40650 | ✗ (20002) | ✓ 71r |
-| 710 | DER Trip HF | 40723 | ✗ (20002) | ✓ 71r |
-| 711 | DER Freq Droop | 40796 | ✗ (20002) | ✓ 72r |
-| 712 | DER Watt-Var | 40870 | ✗ (20002) | ✓ 77r |
-| 713 | DER Storage Capacity | 40949 | ✓ 7r | ✓ 7r |
-| 65000 | DER info | 40958 | ⚠ 643r (placeholder) | ✓ 156r |
-| 65001 | DER Debug info | 41116 | ✗ (20002) | ✓ 92r |
-| 65002 | Param | 41210 | ✗ (20002) | ✓ 123r |
-| 65003 | DbgParam | 41335 | ✗ (20002) | ✓ 266r |
-| 65004 | DER Storage Capacity info | 41603 | ⚠ CRC FAIL | ✓ 116r |
-| 65005 | DER property info | 41721 | ✓ 168r | ✓ 168r |
-| 65006 | Battery info | 41891 | ⚠ 532r (placeholder) | ✓ 339r |
-| 65008 | DER info2 | 42296 | ✗ (20002) | ✓ 26r |
-| 65009 | R&D (BatteryInfo) | 42324 | ✗ (20002) | ✓ 99r |
-| 65010 | EMS-TOU | 42425 | ✓ 270r | ✓ 270r |
-| 65011 | Smart Circuit | 42697 | ✓ 67r | ✓ 67r |
-| 65012 | Time & Country | 42766 | ✓ 28r | ✓ 28r |
-| 65015 | Advanced (Ileak & DCI) | 42881 | ✗ (20002) | ✓ 38r |
-| 65018 | Advanced (String & PE Monitoring) | 42982 | ✗ (20002) | ✓ 34r |
-| 65020 | Advanced (GlobalMPPTScaning) | 43052 | ✗ (20002) | ✓ 25r |
+| ID    | Name                              | reg_addr | Gateway `addr=1`     | Inverter `addr=2` |
+| ----- | --------------------------------- | -------- | -------------------- | ----------------- |
+| 1     | Common                            | 40000    | ✓ 66r                | ✓ 66r             |
+| 701   | DER AC Measurement                | 40070    | ⚠ 877r (placeholder) | ✓ 153r            |
+| 702   | DER Capacity                      | 40225    | ✗ (20002)            | ✓ 50r             |
+| 703   | DER Enter Service                 | 40277    | ✗ (20002)            | ✓ 17r             |
+| 704   | DER AC Controls                   | 40296    | ✗ (20002)            | ✓ 65r             |
+| 705   | DER Volt-Var                      | 40363    | ✗ (20002)            | ✓ 91r             |
+| 706   | DER Volt-Watt                     | 40456    | ✗ (20002)            | ✓ 76r             |
+| 707   | DER Trip LV                       | 40534    | ✗ (20002)            | ✓ 56r             |
+| 708   | DER Trip HV                       | 40592    | ✗ (20002)            | ✓ 56r             |
+| 709   | DER Trip LF                       | 40650    | ✗ (20002)            | ✓ 71r             |
+| 710   | DER Trip HF                       | 40723    | ✗ (20002)            | ✓ 71r             |
+| 711   | DER Freq Droop                    | 40796    | ✗ (20002)            | ✓ 72r             |
+| 712   | DER Watt-Var                      | 40870    | ✗ (20002)            | ✓ 77r             |
+| 713   | DER Storage Capacity              | 40949    | ✓ 7r                 | ✓ 7r              |
+| 65000 | DER info                          | 40958    | ⚠ 643r (placeholder) | ✓ 156r            |
+| 65001 | DER Debug info                    | 41116    | ✗ (20002)            | ✓ 92r             |
+| 65002 | Param                             | 41210    | ✗ (20002)            | ✓ 123r            |
+| 65003 | DbgParam                          | 41335    | ✗ (20002)            | ✓ 266r            |
+| 65004 | DER Storage Capacity info         | 41603    | ⚠ CRC FAIL           | ✓ 116r            |
+| 65005 | DER property info                 | 41721    | ✓ 168r               | ✓ 168r            |
+| 65006 | Battery info                      | 41891    | ⚠ 532r (placeholder) | ✓ 339r            |
+| 65008 | DER info2                         | 42296    | ✗ (20002)            | ✓ 26r             |
+| 65009 | R&D (BatteryInfo)                 | 42324    | ✗ (20002)            | ✓ 99r             |
+| 65010 | EMS-TOU                           | 42425    | ✓ 270r               | ✓ 270r            |
+| 65011 | Smart Circuit                     | 42697    | ✓ 67r                | ✓ 67r             |
+| 65012 | Time & Country                    | 42766    | ✓ 28r                | ✓ 28r             |
+| 65015 | Advanced (Ileak & DCI)            | 42881    | ✗ (20002)            | ✓ 38r             |
+| 65018 | Advanced (String & PE Monitoring) | 42982    | ✗ (20002)            | ✓ 34r             |
+| 65020 | Advanced (GlobalMPPTScaning)      | 43052    | ✗ (20002)            | ✓ 25r             |
 
 Note: model IDs 65007, 65013, 65014, 65016, 65017, 65019 were **not** part of the
 supported list and were not swept; status UNKNOWN.
@@ -217,9 +221,9 @@ supported list and were not swept; status UNKNOWN.
 
 ## 7. Error codes (STRONG)
 
-| errno | errmsg | Meaning | Evidence |
-|-------|--------|---------|----------|
-| 0 | `success` | Model present; `data` populated | 39 responses |
+| errno | errmsg         | Meaning                                     | Evidence     |
+| ----- | -------------- | ------------------------------------------- | ------------ |
+| 0     | `success`      | Model present; `data` populated             | 39 responses |
 | 20002 | `id not found` | Model not implemented for that `(addr, id)` | 19 responses |
 
 Other error codes (bad `addr`, malformed request, auth-required writes) are
@@ -270,14 +274,14 @@ UNKNOWN and should be enumerated with a deliberate negative-path sweep.
 Per the project's four-source rule (raw `tbl` · UI value · SunSpec spec ·
 frontend JS):
 
-| Model | tbl | UI | SunSpec spec | Frontend JS | Verdict |
-|-------|-----|----|--------------|-------------|---------|
-| 1 (Common) | ✓ | ✓ (dashboard) | ✓ (common model) | pending | **VERIFIED** |
-| 65005 (firmware strings) | ✓ | pending | n/a (private) | pending | STRONG |
-| 701–713 (DER) | ✓ (bytes+CRC+len) | pending | ✓ (public DER models) | pending | frame VERIFIED, fields pending |
-| 65000–65020 (private) | ✓ (bytes+CRC) | pending | n/a | pending | frame STRONG, fields UNKNOWN |
+| Model                    | tbl               | UI            | SunSpec spec          | Frontend JS | Verdict                        |
+| ------------------------ | ----------------- | ------------- | --------------------- | ----------- | ------------------------------ |
+| 1 (Common)               | ✓                 | ✓ (dashboard) | ✓ (common model)      | pending     | **VERIFIED**                   |
+| 65005 (firmware strings) | ✓                 | pending       | n/a (private)         | pending     | STRONG                         |
+| 701–713 (DER)            | ✓ (bytes+CRC+len) | pending       | ✓ (public DER models) | pending     | frame VERIFIED, fields pending |
+| 65000–65020 (private)    | ✓ (bytes+CRC)     | pending       | n/a                   | pending     | frame STRONG, fields UNKNOWN   |
 
-The frame/transport layer is verified. Individual register *meanings* for the DER
+The frame/transport layer is verified. Individual register _meanings_ for the DER
 and private models are not yet field-verified and must not be shipped as
 confirmed until cross-checked against the UI and (for standard models) the
 SunSpec DER specification.
@@ -306,7 +310,7 @@ SunSpec DER specification.
 - Addressing primitive is **`(addr, id)`**; the registry keys on it.
 - The model registry should carry, per model: `reg_addr`, expected `length`,
   which addresses serve it, and a verification tag per field.
-- The decoder consumes the *reassembled register payload*, never raw `tbl`.
+- The decoder consumes the _reassembled register payload_, never raw `tbl`.
 - Gateway vs inverter capabilities differ — capability discovery (a `scan`) is a
   first-class feature, not an afterthought.
 - CRC validation is cheap and universal here — make it mandatory and surface a
@@ -314,5 +318,5 @@ SunSpec DER specification.
 
 ---
 
-*Reproduce every figure in this report with:*
+_Reproduce every figure in this report with:_
 `python3 tools/parse_sweep.py && python3 tools/investigate.py`
