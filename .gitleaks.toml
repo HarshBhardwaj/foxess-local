@@ -1,0 +1,44 @@
+# Gitleaks configuration for foxess-local.
+# Gate against leaking personal / device-identifying data in a public repo:
+#   - credentials & tokens (via gitleaks' built-in ruleset)
+#   - FoxESS device serial numbers
+#   - private / LAN IP addresses (device IPs, brokers)
+#
+# Run locally:  gitleaks detect --source . --no-git --config .gitleaks.toml --redact -v
+# Enforced by the pre-commit hook and the CI "secret-scan" job.
+
+title = "foxess-local secret & PII scan"
+
+[extend]
+# Pull in gitleaks' maintained rules for API keys, tokens, private keys, etc.
+useDefault = true
+
+[[rules]]
+id = "foxess-device-serial"
+description = "FoxESS device serial number (gateway/inverter)"
+# 15-char uppercase alphanumeric identifiers beginning with 60 (e.g. 60HUB..., 601U...).
+regex = '''\b60[0-9A-Z]{13}\b'''
+tags = ["pii", "serial", "foxess"]
+
+[[rules]]
+id = "private-ipv4"
+description = "Private/RFC1918 IPv4 address (possible device or broker IP)"
+regex = '''\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3})\b'''
+tags = ["pii", "network"]
+
+[allowlist]
+description = "Placeholders and non-sensitive vendored/fixture data"
+# Redacted placeholders intentionally committed in tests/docs.
+regexes = [
+  '''60HUB0000000000''',
+  '''601U10000000000''',
+  '''0\.0\.0\.0''',
+  '''127\.0\.0\.1''',
+]
+paths = [
+  '''(^|/)\.gitleaks\.toml$''',       # this config (contains example patterns)
+  '''(^|/)frontend/''',               # vendored device single-page app
+  '''(^|/)fixtures/''',               # captured raw device frames (scrubbed)
+  '''(^|/)tests/fixtures/''',
+  '''(^|/)docker/\.env\.example$''',  # documented placeholder values only
+]
