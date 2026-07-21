@@ -28,7 +28,6 @@ from .measurements import (
     AcMeasurement,
     BatteryInfo,
     GridFlow,
-    GridMeasurement,
     InverterStatus,
     LoadInfo,
     SolarInfo,
