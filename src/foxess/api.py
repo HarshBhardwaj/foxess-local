@@ -56,7 +56,7 @@ def create_app(provider: FoxProvider | None = None) -> Any:
     get_provider = provider or _default_provider()
     app = FastAPI(
         title="foxess-local",
-        version="0.1.0",
+        version="0.3.0",
         description="Read-only local access to FoxESS Smart WiLAN devices.",
     )
     app.add_middleware(
@@ -130,8 +130,13 @@ def create_app(provider: FoxProvider | None = None) -> Any:
     @app.get(f"{API_PREFIX}/models")
     async def models(fox: AsyncFoxESS = Fox) -> Any:
         return [
-            {"id": m.id, "name": m.name, "address": m.modbus_address,
-             "fields": len(m.fields), "report": m.report}
+            {
+                "id": m.id,
+                "name": m.name,
+                "address": m.modbus_address,
+                "fields": len(m.fields),
+                "report": m.report,
+            }
             for m in fox.registry
         ]
 
@@ -144,10 +149,18 @@ def create_app(provider: FoxProvider | None = None) -> Any:
         except FoxUnknownModel:
             raise HTTPException(status_code=404, detail=f"unknown model {model_id}") from None
         return {
-            "id": m.id, "name": m.name, "address": m.modbus_address, "report": m.report,
+            "id": m.id,
+            "name": m.name,
+            "address": m.modbus_address,
+            "report": m.report,
             "fields": [
-                {"name": f.name, "label": f.label, "type": f.type,
-                 "unit": f.unit, "writable": f.writable}
+                {
+                    "name": f.name,
+                    "label": f.label,
+                    "type": f.type,
+                    "unit": f.unit,
+                    "writable": f.writable,
+                }
                 for f in m.fields
             ],
         }
@@ -156,10 +169,17 @@ def create_app(provider: FoxProvider | None = None) -> Any:
     async def raw(addr: int, model_id: int, fox: AsyncFoxESS = Fox) -> Any:
         model = await fox.read_model(addr, model_id)
         return {
-            "addr": model.addr, "id": model.id, "name": model.name,
+            "addr": model.addr,
+            "id": model.id,
+            "name": model.name,
             "fields": [
-                {"name": f.name, "label": f.label, "value": f.value,
-                 "unit": f.unit, "address": f.address}
+                {
+                    "name": f.name,
+                    "label": f.label,
+                    "value": f.value,
+                    "unit": f.unit,
+                    "address": f.address,
+                }
                 for f in model.fields
             ],
         }

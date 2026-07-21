@@ -78,9 +78,7 @@ def split_frames(tbl: bytes) -> list[ModbusFrame]:
         data = tbl[i + 3 : i + 3 + byte_count]
         crc_received = tbl[i + 3 + byte_count] | (tbl[i + 4 + byte_count] << 8)
         crc_calculated = crc16(tbl[i : i + 3 + byte_count])
-        frames.append(
-            ModbusFrame(slave, func, byte_count, data, crc_received, crc_calculated)
-        )
+        frames.append(ModbusFrame(slave, func, byte_count, data, crc_received, crc_calculated))
         i = end
     return frames
 

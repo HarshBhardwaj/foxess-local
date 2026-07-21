@@ -28,7 +28,9 @@ from .errors import (
 )
 from .frame import ModbusFrame, ReassembledFrame, reassemble, reassemble_hex, split_frames
 from .measurements import (
+    AcMeasurement,
     BatteryInfo,
+    GridFlow,
     GridMeasurement,
     InverterStatus,
     LoadInfo,
@@ -41,11 +43,12 @@ from .prometheus import FoxCollector
 from .prometheus import render as render_metrics
 from .registry import ModelRegistry, default_registry
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "ADDR_GATEWAY",
     "ADDR_INVERTER",
+    "AcMeasurement",
     "AsyncFoxESS",
     "AsyncTransport",
     "BatteryInfo",
@@ -71,6 +74,7 @@ __all__ = [
     "WriteResult",
     "build_write_frame",
     "encode_field_write",
+    "GridFlow",
     "GridMeasurement",
     "InverterStatus",
     "LoadInfo",

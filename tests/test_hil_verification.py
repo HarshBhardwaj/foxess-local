@@ -18,9 +18,30 @@ from foxess.registry import default_registry
 PAIRS = json.load(open(Path(__file__).parent / "fixtures" / "verify_pairs.json"))
 
 _LIVE = (
-    "power", "current", "voltage", "dcpower", "pv", "load", "grid", "wh",
-    "energy", "bus", "temp", "soc", "batterypower", "w", "second", "minute",
-    "hour", "cellvol", "debuginfo", "displayinfo", "vol", "freq", "hz", "leak",
+    "power",
+    "current",
+    "voltage",
+    "dcpower",
+    "pv",
+    "load",
+    "grid",
+    "wh",
+    "energy",
+    "bus",
+    "temp",
+    "soc",
+    "batterypower",
+    "w",
+    "second",
+    "minute",
+    "hour",
+    "cellvol",
+    "debuginfo",
+    "displayinfo",
+    "vol",
+    "freq",
+    "hz",
+    "leak",
 )
 
 
@@ -34,7 +55,7 @@ def _norm_hex(v: object) -> str | None:
 def _num(v: object) -> float | None:
     if isinstance(v, bool):
         return None
-    if isinstance(v, (int, float)):
+    if isinstance(v, int | float):
         return float(v)
     if isinstance(v, str):
         try:

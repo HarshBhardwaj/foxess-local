@@ -31,8 +31,8 @@ _SENTINELS: frozenset[int] = frozenset(
         0x7FFFFFFF,  # 2147483647  int32 max  (RGM* active power w/o revenue meter)
         0xFFFFFFFF,  # 4294967295  uint32 max
         0xFFFF0000,  # 4294901760  (GenerationPower/TotalPVPower/GridMeter* na)
-        0x7FFF,      # 32767       int16 max
-        0xFFFF,      # 65535       uint16 max
+        0x7FFF,  # 32767       int16 max
+        0xFFFF,  # 65535       uint16 max
     }
 )
 
@@ -63,7 +63,7 @@ class BatteryInfo:
     soh_percent: float | None
     voltage_v: float | None
     current_a: float | None
-    power_w: float | None            # negative = charging, positive = discharging
+    power_w: float | None  # negative = charging, positive = discharging
     temperature_c: float | None
     energy_rated_wh: float | None
     energy_available_wh: float | None
@@ -130,9 +130,9 @@ class GridFlow:
     positive = **export** to grid.
     """
 
-    power_w: float | None                  # signed: negative=import, positive=export
-    import_energy_total_kwh: float | None   # lifetime grid import (kWh)
-    export_energy_total_kwh: float | None   # lifetime grid export (kWh)
+    power_w: float | None  # signed: negative=import, positive=export
+    import_energy_total_kwh: float | None  # lifetime grid import (kWh)
+    export_energy_total_kwh: float | None  # lifetime grid export (kWh)
     import_energy_today_kwh: float | None
     export_energy_today_kwh: float | None
 
@@ -175,8 +175,8 @@ class AcMeasurement:
     reactive_var: float | None
     power_factor: float | None
     frequency_hz: float | None
-    voltage_v: float | None          # L1-N
-    current_a: float | None          # L1
+    voltage_v: float | None  # L1-N
+    current_a: float | None  # L1
     energy_injected_wh: float | None
     connection_state: int | None
 
@@ -246,8 +246,8 @@ class InverterStatus:
     operating_state: int | None
     inverter_state: int | None
     connection_state: int | None
-    temperature_c: float | None      # heat-sink temperature
-    alarm: Any | None                # alarm bitfield (hex string)
+    temperature_c: float | None  # heat-sink temperature
+    alarm: Any | None  # alarm bitfield (hex string)
 
     @classmethod
     def from_models(cls, models: Models) -> InverterStatus:

@@ -19,7 +19,9 @@ def fox(sweep) -> FoxESS:
         return httpx.Response(
             200,
             json={
-                "errno": 0, "errmsg": "success", "mstype": 2,
+                "errno": 0,
+                "errmsg": "success",
+                "mstype": 2,
                 "data": {"id": mid, "reg_addr": rec.reg_addr, "tbl": rec.tbl_hex},
             },
         )
@@ -45,7 +47,7 @@ def test_battery(fox: FoxESS) -> None:
     assert b.current_a == 9.8
     assert b.temperature_c == 32.3
     assert b.power_w == -1783
-    assert b.charging is True          # negative power = charging
+    assert b.charging is True  # negative power = charging
     assert b.energy_rated_wh == 11925
 
 
@@ -53,7 +55,7 @@ def test_grid(fox: FoxESS) -> None:
     # fox.grid is net grid flow from model 65031 (HubInfo) at the gateway addr.
     # Captured during a pure grid-import moment: importing 959 W.
     g = fox.grid
-    assert g.power_w == -959          # negative = import (verified sign)
+    assert g.power_w == -959  # negative = import (verified sign)
     assert g.import_power_w == 959
     assert g.export_power_w == 0.0
     assert g.import_energy_total_kwh == 3660.5
@@ -77,7 +79,7 @@ def test_battery_energy_counters(fox: FoxESS) -> None:
     b = fox.battery
     assert b.energy_charged_total_kwh == 390.1
     assert b.energy_discharged_total_kwh == 335.2
-    assert b.charge_power_w == 1783   # power_w == -1783 -> charging
+    assert b.charge_power_w == 1783  # power_w == -1783 -> charging
     assert b.discharge_power_w == 0.0
 
 

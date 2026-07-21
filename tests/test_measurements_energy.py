@@ -18,8 +18,7 @@ from foxess.models import DecodedField, DecodedModel
 
 def _model(model_id: int, pairs: dict[str, tuple[int, object]]) -> DecodedModel:
     fields = tuple(
-        DecodedField(name=n, label=n, type="int", raw=r, value=v)
-        for n, (r, v) in pairs.items()
+        DecodedField(name=n, label=n, type="int", raw=r, value=v) for n, (r, v) in pairs.items()
     )
     return DecodedModel(addr=2, id=model_id, name=str(model_id), fields=fields)
 
@@ -70,7 +69,7 @@ def test_grid_import_export_from_hubinfo() -> None:
                 "TotalActivePowerOfGrid": (-959, -959),
                 "TotalActivePowerOfLoad": (959, 959),
                 "Grid_total_Grid_Energy_consumption": (36605, 3660.5),  # import
-                "Grid_total_Grid_Energy": (3165, 316.5),                # export
+                "Grid_total_Grid_Energy": (3165, 316.5),  # export
                 "Grid_daily_Grid_Energy_consumption": (624, 62.4),
                 "Grid_daily_Grid_Energy": (159, 15.9),
             },
@@ -83,6 +82,7 @@ def test_grid_import_export_from_hubinfo() -> None:
     assert g.import_energy_total_kwh == 3660.5
     assert g.export_energy_total_kwh == 316.5
     from foxess.measurements import LoadInfo
+
     assert LoadInfo.from_models(m).power_w == 959
 
 

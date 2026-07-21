@@ -182,11 +182,11 @@ export MQTT_BROKER=<your-mqtt-broker>
 
 # Prometheus exporter only, on port 9110
 docker run --rm -p 9110:9110 -e FOX_HOST="$FOX_HOST" \
-  foxess-local:0.1.0 fox exporter "$FOX_HOST" --bind 0.0.0.0 --port 9110
+  foxess-local:0.3.0 fox exporter "$FOX_HOST" --bind 0.0.0.0 --port 9110
 
 # MQTT bridge only, to an existing broker
 docker run --rm -e FOX_HOST="$FOX_HOST" \
-  foxess-local:0.1.0 fox mqtt "$FOX_HOST" --broker "$MQTT_BROKER" --interval 15
+  foxess-local:0.3.0 fox mqtt "$FOX_HOST" --broker "$MQTT_BROKER" --interval 15
 ```
 
 Point your existing Prometheus at the API's `/metrics`:

@@ -46,7 +46,7 @@ class FoxModelDef:
 
     id: int
     name: str
-    start_register: int      # 1-based SunSpec register number (from frontend)
+    start_register: int  # 1-based SunSpec register number (from frontend)
     length_registers: int
     report: str
     fields: tuple[FoxField, ...]
@@ -65,7 +65,7 @@ class DecodedField:
     label: str
     type: str
     raw: Any
-    value: Any                 # scale-applied (numbers) or mapped (enum label)
+    value: Any  # scale-applied (numbers) or mapped (enum label)
     unit: str | None = None
     address: int | None = None
     writable: bool = False

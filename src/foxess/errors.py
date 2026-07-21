@@ -35,8 +35,9 @@ class FoxCRCError(FoxProtocolError):
 class FoxDeviceError(FoxError):
     """The device returned a non-zero ``errno`` in the JSON envelope."""
 
-    def __init__(self, errno: int, errmsg: str, addr: int | None = None,
-                 model_id: int | None = None) -> None:
+    def __init__(
+        self, errno: int, errmsg: str, addr: int | None = None, model_id: int | None = None
+    ) -> None:
         super().__init__(f"device errno={errno} ({errmsg!r}) addr={addr} id={model_id}")
         self.errno = errno
         self.errmsg = errmsg

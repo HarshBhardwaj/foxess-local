@@ -20,8 +20,12 @@ def _async_fox(sweep) -> AsyncFoxESS:
             return httpx.Response(200, json={"errno": rec.errno, "errmsg": rec.errmsg})
         return httpx.Response(
             200,
-            json={"errno": 0, "errmsg": "success", "mstype": 2,
-                  "data": {"id": mid, "reg_addr": rec.reg_addr, "tbl": rec.tbl_hex}},
+            json={
+                "errno": 0,
+                "errmsg": "success",
+                "mstype": 2,
+                "data": {"id": mid, "reg_addr": rec.reg_addr, "tbl": rec.tbl_hex},
+            },
         )
 
     client = httpx.AsyncClient(base_url="http://mock", transport=httpx.MockTransport(handler))

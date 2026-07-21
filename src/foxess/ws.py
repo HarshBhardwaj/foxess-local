@@ -34,8 +34,7 @@ _ALL_GROUPS = (*_MEASUREMENT_GROUPS, "system", "faults")
 
 
 def _envelope(clock: Any, type_: str, group: str, data: Any) -> dict[str, Any]:
-    return {"v": PROTOCOL_VERSION, "type": type_, "group": group,
-            "ts": clock(), "data": data}
+    return {"v": PROTOCOL_VERSION, "type": type_, "group": group, "ts": clock(), "data": data}
 
 
 class _Subscription:
@@ -86,9 +85,12 @@ async def stream(
                 sub.apply(msg)
 
     await websocket.send_json(
-        _envelope(now, "hello", "system",
-                  {"protocol": PROTOCOL_VERSION, "groups": list(_ALL_GROUPS),
-                   "interval": interval})
+        _envelope(
+            now,
+            "hello",
+            "system",
+            {"protocol": PROTOCOL_VERSION, "groups": list(_ALL_GROUPS), "interval": interval},
+        )
     )
 
     receiver = asyncio.create_task(receive_control())
@@ -129,7 +131,6 @@ async def stream(
 def register(app: Any, provider: Any) -> None:
     """Attach the ``/api/v1/ws`` endpoint to a FastAPI app."""
 
-    @app.websocket("/api/v1/ws")  # type: ignore[untyped-decorator]
     async def ws(websocket: WebSocket) -> None:
         await websocket.accept()
         interval = float(websocket.query_params.get("interval", "5"))
@@ -140,3 +141,7 @@ def register(app: Any, provider: Any) -> None:
             pass
         finally:
             await fox.aclose()
+
+    # Prefer add_api_websocket_route over the untyped ``@app.websocket`` decorator
+    # so mypy stays clean across versions.
+    app.add_api_websocket_route("/api/v1/ws", ws)
