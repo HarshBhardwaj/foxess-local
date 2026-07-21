@@ -1,8 +1,8 @@
 """Live example: print a one-line system summary (sync + async).
 
-    export FOX_HOST=<your-device-ip>
-    python examples/live_summary.py
-    # or: python examples/live_summary.py "$FOX_HOST"
+export FOX_HOST=<your-device-ip>
+python examples/live_summary.py
+# or: python examples/live_summary.py "$FOX_HOST"
 """
 
 from __future__ import annotations
@@ -16,9 +16,11 @@ from foxess import AsyncFoxESS, FoxESS
 
 def sync_summary(host: str) -> None:
     with FoxESS(host) as fox:
-        b, g, s = fox.battery, fox.grid, fox.solar
-        print(f"[sync ] SoC {b.soc_percent}% | batt {b.power_w} W | "
-              f"solar {s.power_w} W | grid {g.power_w} W @ {g.frequency_hz} Hz")
+        b, g, s, ac = fox.battery, fox.grid, fox.solar, fox.ac
+        print(
+            f"[sync ] SoC {b.soc_percent}% | batt {b.power_w} W | "
+            f"solar {s.power_w} W | grid {g.power_w} W @ {ac.frequency_hz} Hz"
+        )
 
 
 async def async_summary(host: str) -> None:

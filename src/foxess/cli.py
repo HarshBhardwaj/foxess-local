@@ -34,8 +34,7 @@ def _print_model(model: Any, as_json: bool) -> None:
 def _cmd_models(args: argparse.Namespace) -> int:
     reg = default_registry()
     if args.json:
-        print(json.dumps([{"id": m.id, "name": m.name, "fields": len(m.fields)}
-                          for m in reg]))
+        print(json.dumps([{"id": m.id, "name": m.name, "fields": len(m.fields)} for m in reg]))
     else:
         for m in reg:
             print(f"{m.id:<7}{m.name:<38} fields={len(m.fields)} start={m.modbus_address}")
@@ -75,8 +74,13 @@ def _cmd_mqtt(args: argparse.Namespace) -> int:
     from .mqtt import MqttConfig, MqttPublisher
 
     cfg = MqttConfig(
-        host=args.broker, port=args.port, username=args.username, password=args.password,
-        prefix=args.prefix, discovery_prefix=args.discovery_prefix, interval=args.interval,
+        host=args.broker,
+        port=args.port,
+        username=args.username,
+        password=args.password,
+        prefix=args.prefix,
+        discovery_prefix=args.discovery_prefix,
+        interval=args.interval,
     )
     with FoxESS(args.host) as fox:
         try:
@@ -93,8 +97,11 @@ def _cmd_exporter(args: argparse.Namespace) -> int:
     try:
         import prometheus_client  # noqa: F401
     except ImportError:
-        print("fox exporter requires the [prometheus] extra: "
-              "pip install 'foxess-local[prometheus]'", file=sys.stderr)
+        print(
+            "fox exporter requires the [prometheus] extra: "
+            "pip install 'foxess-local[prometheus]'",
+            file=sys.stderr,
+        )
         return 2
     with FoxESS(args.host) as fox:
         try:
@@ -110,8 +117,9 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     try:
         import uvicorn
     except ImportError:
-        print("fox serve requires the [api] extra: pip install 'foxess-local[api]'",
-              file=sys.stderr)
+        print(
+            "fox serve requires the [api] extra: pip install 'foxess-local[api]'", file=sys.stderr
+        )
         return 2
     os.environ["FOX_HOST"] = args.host
     from .api import create_app

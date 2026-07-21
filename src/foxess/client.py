@@ -119,7 +119,13 @@ class FoxESS:
         register = frame[2] << 8 | frame[3]
         _log.info(
             "WRITE addr=%s model=%s field=%s value=%r register=%s frame=%s dry_run=%s",
-            addr, model_id, field_name, value, register, frame.hex(), dry_run,
+            addr,
+            model_id,
+            field_name,
+            value,
+            register,
+            frame.hex(),
+            dry_run,
         )
         if dry_run:
             return WriteResult(addr, model_id, field_name, value, register, frame.hex(), sent=False)
@@ -128,16 +134,15 @@ class FoxESS:
                 "refusing to write without confirm=True (use dry_run=True to preview)"
             )
         result = self._transport.write_modbus(frame.hex())
-        return WriteResult(addr, model_id, field_name, value, register, frame.hex(),
-                           sent=True, result_hex=result)
+        return WriteResult(
+            addr, model_id, field_name, value, register, frame.hex(), sent=True, result_hex=result
+        )
 
     def read_raw(self, addr: int, model_id: int) -> DataResponse:
         """Return the raw envelope (tbl hex, reg_addr) without decoding."""
         return self._transport.read_data(addr, model_id)
 
-    def read_model(
-        self, addr: int, model_id: int, *, validate_crc: bool = True
-    ) -> DecodedModel:
+    def read_model(self, addr: int, model_id: int, *, validate_crc: bool = True) -> DecodedModel:
         """Fetch, CRC-check, reassemble, and decode one model."""
         resp = self._transport.read_data(addr, model_id)
         frame = reassemble_hex(resp.tbl_hex, validate_crc=validate_crc)
@@ -174,22 +179,16 @@ class FoxESS:
 
     @property
     def system(self) -> SystemInfo:
-        return SystemInfo.from_models(
-            self.read_models(ADDR_INVERTER, SystemInfo.REQUIRED_MODELS)
-        )
+        return SystemInfo.from_models(self.read_models(ADDR_INVERTER, SystemInfo.REQUIRED_MODELS))
 
     @property
     def battery(self) -> BatteryInfo:
-        return BatteryInfo.from_models(
-            self.read_models(ADDR_INVERTER, BatteryInfo.REQUIRED_MODELS)
-        )
+        return BatteryInfo.from_models(self.read_models(ADDR_INVERTER, BatteryInfo.REQUIRED_MODELS))
 
     @property
     def grid(self) -> GridFlow:
         """Net grid import/export (model 65031 'HubInfo', read at the gateway)."""
-        return GridFlow.from_models(
-            self.read_models(ADDR_GATEWAY, GridFlow.REQUIRED_MODELS)
-        )
+        return GridFlow.from_models(self.read_models(ADDR_GATEWAY, GridFlow.REQUIRED_MODELS))
 
     @property
     def gridflow(self) -> GridFlow:
@@ -205,16 +204,12 @@ class FoxESS:
 
     @property
     def solar(self) -> SolarInfo:
-        return SolarInfo.from_models(
-            self.read_models(ADDR_INVERTER, SolarInfo.REQUIRED_MODELS)
-        )
+        return SolarInfo.from_models(self.read_models(ADDR_INVERTER, SolarInfo.REQUIRED_MODELS))
 
     @property
     def load(self) -> LoadInfo:
         """Whole-home load (model 65031 'HubInfo', read at the gateway)."""
-        return LoadInfo.from_models(
-            self.read_models(ADDR_GATEWAY, LoadInfo.REQUIRED_MODELS)
-        )
+        return LoadInfo.from_models(self.read_models(ADDR_GATEWAY, LoadInfo.REQUIRED_MODELS))
 
     @property
     def inverter(self) -> InverterStatus:

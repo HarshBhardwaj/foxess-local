@@ -207,9 +207,7 @@ class AsyncFoxESS:
         )
 
     async def load(self) -> LoadInfo:
-        return LoadInfo.from_models(
-            await self.read_models(ADDR_INVERTER, LoadInfo.REQUIRED_MODELS)
-        )
+        return LoadInfo.from_models(await self.read_models(ADDR_INVERTER, LoadInfo.REQUIRED_MODELS))
 
     async def inverter(self) -> InverterStatus:
         return InverterStatus.from_models(

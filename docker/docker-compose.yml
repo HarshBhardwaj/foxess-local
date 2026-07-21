@@ -6,7 +6,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    image: foxess-local:0.1.0
+    image: foxess-local:0.3.0
     restart: unless-stopped
     environment:
       FOX_HOST: ${FOX_HOST:?Set FOX_HOST in docker/.env to your device IP}
@@ -22,7 +22,7 @@ services:
     stop_grace_period: 15s
 
   mqtt-bridge:
-    image: foxess-local:0.1.0
+    image: foxess-local:0.3.0
     profiles: ["full", "mqtt"]
     restart: unless-stopped
     depends_on: [mosquitto]

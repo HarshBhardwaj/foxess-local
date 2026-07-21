@@ -4,18 +4,29 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
+        files: ^(src|tests)/
       - id: ruff-format
+        files: ^(src|tests)/
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.11.2
     hooks:
       - id: mypy
-        additional_dependencies: ["httpx", "fastapi", "prometheus-client"]
+        # Always use pyproject.toml `files = ["src/foxess"]` — do not typecheck
+        # whatever happens to be staged (tests/tools/examples).
+        pass_filenames: false
+        additional_dependencies:
+          - "httpx"
+          - "fastapi"
+          - "prometheus-client"
+          - "uvicorn"
         args: ["--config-file=pyproject.toml"]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
+        exclude: ^(frontend/|fixtures/|tests/fixtures/)
       - id: trailing-whitespace
+        exclude: ^(frontend/|fixtures/|tests/fixtures/)
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/gitleaks/gitleaks

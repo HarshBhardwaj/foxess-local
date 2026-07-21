@@ -20,7 +20,9 @@ def _transport(sweep) -> AsyncTransport:
         return httpx.Response(
             200,
             json={
-                "errno": 0, "errmsg": "success", "mstype": 2,
+                "errno": 0,
+                "errmsg": "success",
+                "mstype": 2,
                 "data": {"id": mid, "reg_addr": rec.reg_addr, "tbl": rec.tbl_hex},
             },
         )

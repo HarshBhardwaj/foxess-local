@@ -30,8 +30,12 @@ def fox(sweep) -> FoxESS:
             return httpx.Response(200, json={"errno": rec.errno, "errmsg": rec.errmsg})
         return httpx.Response(
             200,
-            json={"errno": 0, "errmsg": "success", "mstype": 2,
-                  "data": {"id": mid, "reg_addr": rec.reg_addr, "tbl": rec.tbl_hex}},
+            json={
+                "errno": 0,
+                "errmsg": "success",
+                "mstype": 2,
+                "data": {"id": mid, "reg_addr": rec.reg_addr, "tbl": rec.tbl_hex},
+            },
         )
 
     client = httpx.Client(base_url="http://mock", transport=httpx.MockTransport(handler))
@@ -73,7 +77,7 @@ def test_state_payloads_from_real_views(fox: FoxESS) -> None:
     assert battery["energy_discharged_total_kwh"] == 335.2
     # Net grid flow (model 65031 HubInfo, gateway addr) on fox/grid; AC freq on fox/ac.
     grid = json.loads(states["fox/grid"])
-    assert grid["power_w"] == -959                    # negative = import
+    assert grid["power_w"] == -959  # negative = import
     assert grid["import_energy_total_kwh"] == 3660.5  # real Hub meter counter
     ac = json.loads(states["fox/ac"])
     assert ac["frequency_hz"] == 59.98
@@ -95,9 +99,7 @@ def test_publisher_emits_discovery_and_state(fox: FoxESS) -> None:
     topics = [t for t, _, _ in pub._client.published]
     # discovery is retained
     assert any(t.endswith("/battery_soc_percent/config") for t in topics)
-    assert all(
-        retain for t, _, retain in pub._client.published if t.endswith("/config")
-    )
+    assert all(retain for t, _, retain in pub._client.published if t.endswith("/config"))
     # state topics present
     assert "fox/battery" in topics
     assert "fox/solar" in topics

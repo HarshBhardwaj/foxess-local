@@ -19,12 +19,14 @@ def _transport(sweep, *, capture: list | None = None) -> Transport:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path.endswith("/modbus_rw"):
             import json
+
             body = json.loads(request.content)
             if capture is not None:
                 capture.append(body["cmd"])
             # echo a success result that mirrors function 0x10
-            return httpx.Response(200, json={"errno": 0, "errmsg": "success",
-                                             "data": {"result": "0210abcd"}})
+            return httpx.Response(
+                200, json={"errno": 0, "errmsg": "success", "data": {"result": "0210abcd"}}
+            )
         addr = int(request.url.params["addr"])
         mid = int(request.url.params["id"])
         rec = sweep[(addr, mid)]
@@ -32,8 +34,12 @@ def _transport(sweep, *, capture: list | None = None) -> Transport:
             return httpx.Response(200, json={"errno": rec.errno, "errmsg": rec.errmsg})
         return httpx.Response(
             200,
-            json={"errno": 0, "errmsg": "success", "mstype": 2,
-                  "data": {"id": mid, "reg_addr": rec.reg_addr, "tbl": rec.tbl_hex}},
+            json={
+                "errno": 0,
+                "errmsg": "success",
+                "mstype": 2,
+                "data": {"id": mid, "reg_addr": rec.reg_addr, "tbl": rec.tbl_hex},
+            },
         )
 
     client = httpx.Client(base_url="http://mock", transport=httpx.MockTransport(handler))
