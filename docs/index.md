@@ -2,7 +2,7 @@
 
 A fully-local, **evidence-first** Python SDK for FoxESS "Smart WiLAN" devices
 (e.g. Fox Hub G2 gateway + AIO-H1 inverter). No FoxCloud, no account, no
-internet — it talks to the device's own `http://<ip>/api/v1/sunspec/data`
+internet — it talks to the device's own `http://$FOX_HOST/api/v1/sunspec/data`
 endpoint and decodes the SunSpec/Modbus frames locally.
 
 > Every register mapping in this SDK was extracted from the device's own
@@ -54,9 +54,10 @@ print(model.get("WMaxRtg"))              # 11400  (matches the 11.4 kW nameplate
 High-level (against a device on your LAN):
 
 ```python
+import os
 from foxess import FoxESS
 
-with FoxESS("192.168.1.38") as fox:
+with FoxESS(os.environ["FOX_HOST"]) as fox:
     print(fox.system.model)          # 'AIO-H1-11.4-US'
     print(fox.battery.soc_percent)   # 80.0
     print(fox.battery.power_w)        # -2668  (negative = charging)
@@ -68,31 +69,34 @@ Async (concurrent model reads under the hood):
 
 ```python
 import asyncio
+import os
 from foxess import AsyncFoxESS
 
 async def main():
-    async with AsyncFoxESS("192.168.1.38") as fox:
+    async with AsyncFoxESS(os.environ["FOX_HOST"]) as fox:
         b, s = await asyncio.gather(fox.battery(), fox.solar())
         print(b.soc_percent, s.power_w)
 
 asyncio.run(main())
 ```
 
-CLI:
+CLI (set `FOX_HOST` to your device IP first):
 
 ```bash
-fox models                 # list the register map
-fox decode 702 <tbl_hex>   # decode a captured payload offline
-fox read 192.168.1.38 2 1  # read + decode a live model
-fox scan 192.168.1.38 2    # probe available models
-fox serve 192.168.1.38     # run the read-only REST API (needs [api] extra)
+export FOX_HOST=<your-device-ip>
+fox models                    # list the register map
+fox decode 702 <tbl_hex>      # decode a captured payload offline
+fox read "$FOX_HOST" 2 1      # read + decode a live model
+fox scan "$FOX_HOST" 2        # probe available models
+fox serve "$FOX_HOST"         # run the read-only REST API (needs [api] extra)
 ```
 
 ## REST API
 
 ```bash
 pip install -e ".[api]"
-fox serve 192.168.1.38 --bind 0.0.0.0 --port 8080
+export FOX_HOST=<your-device-ip>
+fox serve "$FOX_HOST" --bind 0.0.0.0 --port 8080
 ```
 
 Endpoints (versioned under `/api/v1`, OpenAPI docs at `/docs`):
@@ -108,7 +112,8 @@ GET /api/v1/health        GET /api/v1/ready
 
 ```bash
 pip install -e ".[mqtt]"
-fox mqtt 192.168.1.38 --broker 192.168.1.10 --username user --password pass
+export FOX_HOST=<your-device-ip>
+fox mqtt "$FOX_HOST" --broker "$MQTT_BROKER" --username user --password pass
 ```
 
 The publisher announces Home Assistant MQTT Discovery once (retained), then
@@ -125,7 +130,8 @@ unavailable if the publisher stops. State topics: `fox/battery`, `fox/grid`,
 
 ```bash
 pip install -e ".[prometheus]"
-fox exporter 192.168.1.38 --port 9110      # standalone /metrics on :9110
+export FOX_HOST=<your-device-ip>
+fox exporter "$FOX_HOST" --port 9110      # standalone /metrics on :9110
 # or, if the REST API is running, GET /metrics on that server
 ```
 

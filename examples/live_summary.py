@@ -1,8 +1,8 @@
 """Live example: print a one-line system summary (sync + async).
 
-    export FOX_HOST=192.168.1.38
+    export FOX_HOST=<your-device-ip>
     python examples/live_summary.py
-    # or: python examples/live_summary.py 192.168.1.38
+    # or: python examples/live_summary.py "$FOX_HOST"
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ def main() -> None:
     if not host:
         print(
             "Device IP required: set FOX_HOST or pass it as argv[1]\n"
-            "  export FOX_HOST=192.168.1.38 && python examples/live_summary.py",
+            "  export FOX_HOST=<your-device-ip> && python examples/live_summary.py",
             file=sys.stderr,
         )
         raise SystemExit(2)
