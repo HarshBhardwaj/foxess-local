@@ -26,7 +26,7 @@ in to exactly what you want (see §5).
 
 - Docker Engine 24+ and the Compose plugin (`docker compose version`).
 - Network reachability from the Docker host to the FoxESS device on port 80.
-- The device's IP address (e.g. `192.168.1.38`).
+- The device's IP address (set as `FOX_HOST` in `.env`).
 
 ---
 
@@ -36,9 +36,8 @@ in to exactly what you want (see §5).
 cd docker
 
 # 1. Point the stack at your device
-cat > .env <<'EOF'
-FOX_HOST=192.168.1.38
-EOF
+cp .env.example .env
+# edit .env and set FOX_HOST=<your-device-ip>
 
 # 2. Start just the local API (REST + metrics + websocket)
 docker compose up -d
@@ -105,7 +104,7 @@ service's `environment:` if needed):
 Example `.env` for a hardened deployment with custom ports:
 
 ```dotenv
-FOX_HOST=192.168.10.38
+FOX_HOST=<your-device-ip>
 API_PORT=8090
 GRAFANA_PORT=3001
 FOX_CORS_ORIGINS=https://dashboards.example.lan
@@ -178,15 +177,16 @@ mosquitto_sub -h localhost -t 'fox/#' -v
 The same image is a CLI. Run just the exporter or the MQTT bridge:
 
 ```bash
-DEVICE=192.168.1.38
+export FOX_HOST=<your-device-ip>
+export MQTT_BROKER=<your-mqtt-broker>
 
 # Prometheus exporter only, on port 9110
-docker run --rm -p 9110:9110 -e FOX_HOST="$DEVICE" \
-  foxess-local:0.1.0 fox exporter "$DEVICE" --bind 0.0.0.0 --port 9110
+docker run --rm -p 9110:9110 -e FOX_HOST="$FOX_HOST" \
+  foxess-local:0.1.0 fox exporter "$FOX_HOST" --bind 0.0.0.0 --port 9110
 
 # MQTT bridge only, to an existing broker
-docker run --rm -e FOX_HOST="$DEVICE" \
-  foxess-local:0.1.0 fox mqtt "$DEVICE" --broker 192.168.1.10 --interval 15
+docker run --rm -e FOX_HOST="$FOX_HOST" \
+  foxess-local:0.1.0 fox mqtt "$FOX_HOST" --broker "$MQTT_BROKER" --interval 15
 ```
 
 Point your existing Prometheus at the API's `/metrics`:

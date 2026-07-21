@@ -1,7 +1,8 @@
 """High-level client: fetch + reassemble + decode in one call.
 
+    import os
     from foxess import FoxESS
-    fox = FoxESS("<device-ip>")  # or os.environ["FOX_HOST"]
+    fox = FoxESS(os.environ["FOX_HOST"])
     common = fox.read_model(2, 1)
     print(common.get("Md"))          # 'AIO-H1-11.4-US'
 
@@ -24,7 +25,9 @@ from .errors import (
 )
 from .frame import reassemble_hex
 from .measurements import (
+    AcMeasurement,
     BatteryInfo,
+    GridFlow,
     GridMeasurement,
     InverterStatus,
     LoadInfo,
@@ -183,9 +186,22 @@ class FoxESS:
         )
 
     @property
-    def grid(self) -> GridMeasurement:
-        return GridMeasurement.from_models(
-            self.read_models(ADDR_INVERTER, GridMeasurement.REQUIRED_MODELS)
+    def grid(self) -> GridFlow:
+        """Net grid import/export (model 65031 'HubInfo', read at the gateway)."""
+        return GridFlow.from_models(
+            self.read_models(ADDR_GATEWAY, GridFlow.REQUIRED_MODELS)
+        )
+
+    @property
+    def gridflow(self) -> GridFlow:
+        """Alias for :attr:`grid` (net grid import/export, model 65031)."""
+        return self.grid
+
+    @property
+    def ac(self) -> AcMeasurement:
+        """Inverter AC-terminal measurement (model 701)."""
+        return AcMeasurement.from_models(
+            self.read_models(ADDR_INVERTER, AcMeasurement.REQUIRED_MODELS)
         )
 
     @property
@@ -196,8 +212,9 @@ class FoxESS:
 
     @property
     def load(self) -> LoadInfo:
+        """Whole-home load (model 65031 'HubInfo', read at the gateway)."""
         return LoadInfo.from_models(
-            self.read_models(ADDR_INVERTER, LoadInfo.REQUIRED_MODELS)
+            self.read_models(ADDR_GATEWAY, LoadInfo.REQUIRED_MODELS)
         )
 
     @property

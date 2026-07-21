@@ -7,7 +7,7 @@ MQTT and Prometheus/Grafana services are behind compose profiles.
 
 ```bash
 cd docker
-echo "FOX_HOST=192.168.1.38" > .env      # your device IP
+cp .env.example .env   # then set FOX_HOST=<your-device-ip>
 docker compose up -d                     # REST API on :8080
 docker compose --profile full up -d      # + mosquitto, prometheus, grafana, mqtt bridge
 ```
@@ -35,12 +35,11 @@ termination (`stop_grace_period`), and environment-variable configuration
 
 Run a single integration instead of the API:
 
-````bash
 ```bash
-DEVICE=192.168.1.38
-docker run --rm -e FOX_HOST="$DEVICE" foxess-local:0.1.0 \
-  fox exporter "$DEVICE" --port 9110
-````
+export FOX_HOST=<your-device-ip>
+docker run --rm -e FOX_HOST="$FOX_HOST" foxess-local:0.1.0 \
+  fox exporter "$FOX_HOST" --port 9110
+```
 
 `FOX_HOST` is required for the REST API entrypoint; CLI commands (`fox exporter`,
 `fox mqtt`, …) take the device IP as an explicit argument.

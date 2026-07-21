@@ -19,12 +19,14 @@ Recovered from the frontend (`sunspec` chunk `editDeviceData` / `genData` /
   ```
 
   `start_register = reg_addr = (field 1-based register) − 1`.
+
 - **Success:** response `errno == 0` and `data.result[2:4] == "10"` (echoes the
   function code). Write responses carry `mstype: 3` (reads use `mstype: 2`), and
   `data.result` is the standard Modbus 0x10 echo:
   `slave | 10 | start_register(2) | num_registers(2) | CRC(2)`.
 
 ### Value encoding (`genData` / `genValue`) — inverse of the decoder
+
 - `ascii`: latin1 bytes, right-padded with `0x00` to the field length.
 - `uint` / `int` / `sf`: big-endian integer (2 or 4 bytes; signed for int/sf).
 - Scale factors are re-applied inversely: a field decoded as `raw / 10^n` is
@@ -47,23 +49,23 @@ single most important item for the threat model: the device MUST be isolated
 
 ## 3. Full endpoint inventory (discovered)
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/api/v1/sunspec/data?addr&id` | Read a model (verified) |
-| GET | `/api/v1/sunspec/devlist` | List devices behind the gateway |
-| GET | `/api/v1/sunspec/scanlist` | Device scan |
-| POST | `/api/v1/sunspec/modbus_rw` | **Write registers (0x10)** |
-| GET | `/api/v1/sunspec/param_get` | Read parameters |
-| POST | `/api/v1/sunspec/param_set` | Set parameters |
-| POST | `/api/v1/sunspec/login` | Set username cookie |
-| POST | `/api/v1/sunspec/change_password` | Change password |
-| POST | `/api/v1/sunspec/reset_password` | Reset password |
-| GET | `/api/v1/sunspec/sys_info` | System info |
-| GET/POST | `/api/v1/sunspec/net_config`, `net_status` | Network config/status |
-| POST | `/api/v1/sunspec/ip_config`, `ap_config` | IP / AP config |
-| GET | `/api/v1/sunspec/log` | Device logs |
-| GET | `/api/v1/sunspec/inv_file_list`, `inv_upgrade_status` | Firmware files/status |
-| POST | `/api/v1/sunspec/upgrade` | Firmware upgrade |
+| Method   | Path                                                  | Purpose                         |
+| -------- | ----------------------------------------------------- | ------------------------------- |
+| GET      | `/api/v1/sunspec/data?addr&id`                        | Read a model (verified)         |
+| GET      | `/api/v1/sunspec/devlist`                             | List devices behind the gateway |
+| GET      | `/api/v1/sunspec/scanlist`                            | Device scan                     |
+| POST     | `/api/v1/sunspec/modbus_rw`                           | **Write registers (0x10)**      |
+| GET      | `/api/v1/sunspec/param_get`                           | Read parameters                 |
+| POST     | `/api/v1/sunspec/param_set`                           | Set parameters                  |
+| POST     | `/api/v1/sunspec/login`                               | Set username cookie             |
+| POST     | `/api/v1/sunspec/change_password`                     | Change password                 |
+| POST     | `/api/v1/sunspec/reset_password`                      | Reset password                  |
+| GET      | `/api/v1/sunspec/sys_info`                            | System info                     |
+| GET/POST | `/api/v1/sunspec/net_config`, `net_status`            | Network config/status           |
+| POST     | `/api/v1/sunspec/ip_config`, `ap_config`              | IP / AP config                  |
+| GET      | `/api/v1/sunspec/log`                                 | Device logs                     |
+| GET      | `/api/v1/sunspec/inv_file_list`, `inv_upgrade_status` | Firmware files/status           |
+| POST     | `/api/v1/sunspec/upgrade`                             | Firmware upgrade                |
 
 `param_get`/`param_set`, config, and `upgrade` are catalogued for future phases
 but **not implemented** — they are higher-risk and need their own evidence pass.
@@ -87,8 +89,10 @@ but **not implemented** — they are higher-risk and need their own evidence pas
 - **No dangerous defaults.** Nothing is written on construction or read paths.
 
 ```python
+import os
 from foxess import FoxESS
-fox = FoxESS("192.168.1.38", allow_writes=True)
+
+fox = FoxESS(os.environ["FOX_HOST"], allow_writes=True)
 print(fox.write_field(2, 1, "DA", 3, dry_run=True).frame_hex)  # preview only
 # fox.write_field(2, 1, "DA", 3, confirm=True)                 # actually writes
 ```
@@ -106,14 +110,14 @@ validated on a specific firmware, and never expose them casually.
 ## 7. Confirmed write round-trip (hardware-in-the-loop)
 
 A single **reversible no-op** write was performed to validate the path safely:
-the inverter's Device Address (model 1, `DA`) was written back to its *current*
+the inverter's Device Address (model 1, `DA`) was written back to its _current_
 value (2 → 2), so no state changed.
 
 - SDK frame (DA=2): `02 10 9C84 0001 02 0002 712C` — its pre-CRC bytes are
   **byte-for-byte identical** to the frame the device's own frontend builds.
 - `POST /api/v1/sunspec/modbus_rw` body `{"cmd":"02109c840001020002712c"}`.
 - Response: `{"errno":0,"errmsg":"success","data":{"mstype":3,
-  "result":"02109C8400016F83"}}` — a valid Modbus 0x10 echo (register 0x9C84,
+"result":"02109C8400016F83"}}` — a valid Modbus 0x10 echo (register 0x9C84,
   1 register written).
 - Read-back afterwards: `DA == 2`, unchanged. Fully reversible.
 

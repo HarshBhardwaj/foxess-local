@@ -51,16 +51,40 @@ SENSORS: tuple[SensorSpec, ...] = (
     SensorSpec("battery", "voltage_v", "Battery Voltage", "voltage", "V"),
     SensorSpec("battery", "current_a", "Battery Current", "current", "A"),
     SensorSpec("battery", "power_w", "Battery Power", "power", "W"),
+    SensorSpec("battery", "charge_power_w", "Battery Charge Power", "power", "W"),
+    SensorSpec("battery", "discharge_power_w", "Battery Discharge Power", "power", "W"),
     SensorSpec("battery", "temperature_c", "Battery Temperature", "temperature", "°C"),
     SensorSpec("battery", "energy_available_wh", "Battery Energy Available",
                "energy_storage", "Wh"),
-    # Grid / inverter AC
+    # Battery cumulative energy (for the HA Energy dashboard battery in/out tiles)
+    SensorSpec("battery", "energy_charged_total_kwh", "Battery Energy Charged Total",
+               "energy", "kWh", state_class="total_increasing"),
+    SensorSpec("battery", "energy_discharged_total_kwh", "Battery Energy Discharged Total",
+               "energy", "kWh", state_class="total_increasing"),
+    SensorSpec("battery", "energy_charged_today_kwh", "Battery Energy Charged Today",
+               "energy", "kWh", state_class="total_increasing"),
+    SensorSpec("battery", "energy_discharged_today_kwh", "Battery Energy Discharged Today",
+               "energy", "kWh", state_class="total_increasing"),
+    # Grid (net import/export -- model 65031 'HubInfo' at the gateway address).
+    # power_w is signed: negative = import, positive = export.
     SensorSpec("grid", "power_w", "Grid Power", "power", "W"),
-    SensorSpec("grid", "frequency_hz", "Grid Frequency", "frequency", "Hz"),
-    SensorSpec("grid", "voltage_v", "Grid Voltage", "voltage", "V"),
-    SensorSpec("grid", "current_a", "Grid Current", "current", "A"),
-    SensorSpec("grid", "power_factor", "Power Factor", "power_factor", None),
-    SensorSpec("grid", "energy_injected_wh", "Energy Injected", "energy", "Wh",
+    SensorSpec("grid", "import_power_w", "Grid Import Power", "power", "W"),
+    SensorSpec("grid", "export_power_w", "Grid Export Power", "power", "W"),
+    SensorSpec("grid", "import_energy_total_kwh", "Grid Import Energy", "energy", "kWh",
+               state_class="total_increasing"),
+    SensorSpec("grid", "export_energy_total_kwh", "Grid Export Energy", "energy", "kWh",
+               state_class="total_increasing"),
+    SensorSpec("grid", "import_energy_today_kwh", "Grid Import Energy Today", "energy", "kWh",
+               state_class="total_increasing"),
+    SensorSpec("grid", "export_energy_today_kwh", "Grid Export Energy Today", "energy", "kWh",
+               state_class="total_increasing"),
+    # Inverter AC terminal (model 701 -- previously mislabeled "grid")
+    SensorSpec("ac", "power_w", "Inverter AC Power", "power", "W"),
+    SensorSpec("ac", "frequency_hz", "Grid Frequency", "frequency", "Hz"),
+    SensorSpec("ac", "voltage_v", "AC Voltage", "voltage", "V"),
+    SensorSpec("ac", "current_a", "AC Current", "current", "A"),
+    SensorSpec("ac", "power_factor", "Power Factor", "power_factor", None),
+    SensorSpec("ac", "energy_injected_wh", "AC Energy Injected", "energy", "Wh",
                state_class="total_increasing"),
     # Solar
     SensorSpec("solar", "power_w", "Solar Power", "power", "W"),
@@ -177,7 +201,8 @@ def collect_views(fox: Any) -> dict[str, Any]:
     """Read the five publishable views from a (sync) FoxESS client."""
     return {
         "battery": fox.battery,
-        "grid": fox.grid,
+        "grid": fox.grid,       # GridFlow (model 65004) -- net import/export
+        "ac": fox.ac,           # AcMeasurement (model 701) -- inverter AC terminal
         "solar": fox.solar,
         "load": fox.load,
         "inverter": fox.inverter,
