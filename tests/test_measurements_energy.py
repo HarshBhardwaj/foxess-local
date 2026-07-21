@@ -7,10 +7,10 @@ in/out and grid import/export on an inverter without an external revenue meter.
 from __future__ import annotations
 
 from foxess.measurements import (
+    _SENTINELS,
     AcMeasurement,
     BatteryInfo,
     GridFlow,
-    _SENTINELS,
     _val,
 )
 from foxess.models import DecodedField, DecodedModel
