@@ -7,7 +7,11 @@ no YAML.
 ## Quick start
 
 ```bash
-pip install "foxess-local[mqtt]"
+# foxess-local isn't published to PyPI yet — install from a clone
+git clone https://github.com/HarshBhardwaj/foxess-local
+cd foxess-local
+pip install -e ".[mqtt]"
+
 export FOX_HOST=<your-device-ip>
 export MQTT_BROKER=<your-mqtt-broker>
 fox mqtt "$FOX_HOST" --broker "$MQTT_BROKER" --username <u> --password <p>
