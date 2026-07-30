@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 from typing import Any
 
@@ -171,7 +172,20 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _configure_logging() -> None:
+    """Make ``foxess.*`` logger output (warnings from the resilient MQTT/exporter
+    poll loops in particular) visible on stderr without clobbering a caller's own
+    logging setup if ``fox`` is invoked from within another application."""
+    root = logging.getLogger()
+    if not root.handlers:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
+    _configure_logging()
     parser = build_parser()
     args = parser.parse_args(argv)
     dispatch = {

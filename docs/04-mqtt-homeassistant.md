@@ -57,6 +57,17 @@ carrying manufacturer / model / firmware version), including:
   so Home Assistant shows "unknown" rather than a stale reading.
 - Energy counters carry the device's own scaling (verified against the UI); the
   `total_increasing` state class handles daily counter resets.
+- **A device or broker outage degrades to `fox/status: offline`, it does not
+  crash the bridge.** `MqttPublisher.run()` catches `FoxError` around both the
+  discovery announce and every state poll (the same per-cycle pattern
+  `foxess.prometheus.FoxCollector` already used for Prometheus scrapes), flips
+  availability, counts the failure (`poll_success` / `poll_errors`), and
+  retries next tick with capped exponential backoff instead of exiting. This
+  fixes a crash-loop bug where a single slow device response (a timeout on
+  the startup discovery read, in particular) took the whole `fox mqtt`
+  process down; under the Home Assistant app's Watchdog that meant an
+  immediate restart into the same timeout, repeating until the app landed in
+  an `Error` state needing a manual restart. See `CHANGELOG.md` (Unreleased).
 
 ## Programmatic use
 
