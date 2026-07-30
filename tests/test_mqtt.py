@@ -10,6 +10,8 @@ import pytest
 from foxess.client import FoxESS
 from foxess.measurements import SystemInfo
 from foxess.mqtt import (
+    AVAILABILITY_OFFLINE,
+    AVAILABILITY_ONLINE,
     SENSORS,
     MqttConfig,
     MqttPublisher,
@@ -84,11 +86,22 @@ def test_state_payloads_from_real_views(fox: FoxESS) -> None:
 
 
 class _FakeClient:
-    def __init__(self) -> None:
+    def __init__(self, *, raise_on_publish: bool = False) -> None:
         self.published: list[tuple[str, str, bool]] = []
+        self._raise_on_publish = raise_on_publish
+        self.loop_stop_called = False
+        self.disconnect_called = False
 
     def publish(self, topic: str, payload: str = "", retain: bool = False) -> None:
+        if self._raise_on_publish:
+            raise RuntimeError("boom")
         self.published.append((topic, payload, retain))
+
+    def loop_stop(self) -> None:
+        self.loop_stop_called = True
+
+    def disconnect(self) -> None:
+        self.disconnect_called = True
 
 
 def test_publisher_emits_discovery_and_state(fox: FoxESS) -> None:
@@ -103,3 +116,80 @@ def test_publisher_emits_discovery_and_state(fox: FoxESS) -> None:
     # state topics present
     assert "fox/battery" in topics
     assert "fox/solar" in topics
+
+
+@pytest.fixture
+def flaky_fox(sweep):
+    """A device whose first ``fail_until`` HTTP calls time out, then behaves
+    like the real captured sweep. ``retries=0`` on the Transport so a "failed"
+    call fails immediately (no real sleep from the transport's own backoff) --
+    this fixture is for exercising MqttPublisher.run's resilience, not
+    Transport's own retry behaviour (covered in test_transport.py)."""
+    calls = {"n": 0}
+    state = {"fail_until": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] <= state["fail_until"]:
+            raise httpx.TimeoutException("simulated device timeout", request=request)
+        addr = int(request.url.params["addr"])
+        mid = int(request.url.params["id"])
+        rec = sweep[(addr, mid)]
+        if rec.errno != 0:
+            return httpx.Response(200, json={"errno": rec.errno, "errmsg": rec.errmsg})
+        return httpx.Response(
+            200,
+            json={
+                "errno": 0,
+                "errmsg": "success",
+                "mstype": 2,
+                "data": {"id": mid, "reg_addr": rec.reg_addr, "tbl": rec.tbl_hex},
+            },
+        )
+
+    client = httpx.Client(base_url="http://mock", transport=httpx.MockTransport(handler))
+    transport = Transport("mock", client=client, retries=0, backoff=0.0)
+    fox = FoxESS("mock", transport=transport)
+    return fox, state, calls
+
+
+def test_run_survives_transient_device_failure_and_recovers(flaky_fox) -> None:
+    """Regression test for the crash-loop bug: a device that times out on
+    startup (during the discovery read) or on any later poll must not take
+    ``run`` down -- it should flip availability to "offline", count the
+    failure, and keep going, exactly like foxess.prometheus.FoxCollector
+    already does per-scrape."""
+    fox, state, calls = flaky_fox
+    # Fails the discovery read (1 call) and the first poll's first model read
+    # (the next call) -- i.e. the whole first iteration -- then recovers.
+    state["fail_until"] = 2
+
+    pub = MqttPublisher(fox, MqttConfig(prefix="fox", interval=0.0))
+    pub._client = _FakeClient()
+
+    pub.run(iterations=3)  # must not raise
+
+    assert pub.poll_errors == 1
+    assert pub.poll_success == 2
+
+    avail = [p for t, p, _ in pub._client.published if t == "fox/status"]
+    assert AVAILABILITY_OFFLINE in avail
+    assert AVAILABILITY_ONLINE in avail
+    assert avail.index(AVAILABILITY_OFFLINE) < avail.index(AVAILABILITY_ONLINE)
+
+    # Discovery retried after the first failed attempt and eventually published.
+    topics = [t for t, _, _ in pub._client.published]
+    assert any(t.endswith("/battery_soc_percent/config") for t in topics)
+    # And state kept flowing once the device recovered.
+    assert "fox/battery" in topics
+
+
+def test_run_gives_up_on_non_fox_errors(fox: FoxESS) -> None:
+    """A bug (or any non-FoxError failure) must still surface, not be silently
+    retried forever -- resilience is scoped to the known "device/broker didn't
+    answer" failure modes, not a blanket except-and-continue."""
+    pub = MqttPublisher(fox, MqttConfig(prefix="fox", interval=0.0))
+    pub._client = _FakeClient(raise_on_publish=True)
+
+    with pytest.raises(RuntimeError, match="boom"):
+        pub.run(iterations=3)

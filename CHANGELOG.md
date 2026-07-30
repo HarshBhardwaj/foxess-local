@@ -4,6 +4,26 @@ All notable changes to this project are documented here
 ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)).
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`fox mqtt` / the Home Assistant app no longer crash-loop on a transient
+  device or broker outage.** `MqttPublisher.run()` previously let any
+  `FoxError` (most commonly `FoxTimeoutError` from a slow inverter response)
+  propagate out of the poll loop uncaught, killing the whole process; under a
+  Supervisor Watchdog that meant an immediate restart into the same timeout,
+  repeating until the app landed in `Error` needing a manual restart — even
+  though the underlying outage was only a few seconds. The loop now mirrors
+  `foxess.prometheus.FoxCollector`'s existing per-scrape resilience: a failed
+  discovery announce or state poll flips MQTT availability to `offline`
+  (Home Assistant shows "unavailable" instead of a stale value), is counted
+  (`MqttPublisher.poll_success` / `poll_errors`), and is retried on the next
+  tick with capped exponential backoff — it never ends the loop. The initial
+  broker connect gets the same treatment instead of raising once and exiting.
+  Non-`FoxError` failures (a missing extra, a real bug) still propagate, since
+  retrying those would not help.
+
 ## [0.3.0] - 2026-07-20
 
 Public-release hardening plus corrected grid/load metering for Home Assistant Energy.

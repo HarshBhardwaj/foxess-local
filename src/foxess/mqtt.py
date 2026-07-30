@@ -16,14 +16,24 @@ loop imported lazily (optional ``[mqtt]`` extra).
 from __future__ import annotations
 
 import json
+import logging
+import time
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from .errors import FoxError
 from .measurements import SystemInfo
+
+_log = logging.getLogger("foxess.mqtt")
 
 AVAILABILITY_ONLINE = "online"
 AVAILABILITY_OFFLINE = "offline"
+
+# Cap on the backoff applied while the device or broker is unreachable, so a
+# prolonged outage settles into a slow, steady retry cadence instead of either
+# hammering the device or (the old behaviour) crashing the whole process.
+DEFAULT_MAX_BACKOFF = 300.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,6 +213,7 @@ class MqttConfig:
     client_id: str = "foxess-local"
     interval: float = 15.0
     retain_state: bool = False
+    max_backoff: float = DEFAULT_MAX_BACKOFF
 
 
 def _node_id(serial: str | None) -> str:
@@ -297,12 +308,37 @@ def collect_views(fox: Any) -> dict[str, Any]:
 
 
 class MqttPublisher:
-    """Thin paho-mqtt publisher: discovery once, then a state poll loop."""
+    """Thin paho-mqtt publisher: discovery once, then a resilient state poll loop.
+
+    Every device/broker read in this class can fail transiently -- the inverter
+    is slow, a packet is lost, the Hub reboots. Before this fix, any single such
+    failure (a :class:`~foxess.errors.FoxError`, most commonly
+    :class:`~foxess.errors.FoxTimeoutError`) propagated out of :meth:`run`
+    uncaught, so ``fox mqtt`` (and the Home Assistant app that runs it) exited.
+    Under a Supervisor Watchdog that just means an immediate, tight restart ->
+    same timeout -> crash again -- a crash loop that can end with the app stuck
+    in an ``Error`` state needing a manual restart, even though the underlying
+    outage was a few seconds long.
+
+    The fix mirrors what :mod:`foxess.prometheus` already does for scrapes:
+    catch :class:`~foxess.errors.FoxError`, flip MQTT availability to
+    ``offline`` so Home Assistant shows "unavailable" instead of a stale value,
+    count it, and try again next tick -- never raise out of the loop for a
+    failure this class exists to survive. Anything that is *not* a
+    :class:`~foxess.errors.FoxError` (a missing extra, a real bug,
+    ``KeyboardInterrupt``) still propagates; retrying those would not help.
+    """
 
     def __init__(self, fox: Any, cfg: MqttConfig | None = None) -> None:
         self._fox = fox
         self._cfg = cfg or MqttConfig()
         self._client: Any = None
+        # Simple observability counters, deliberately mirroring
+        # foxess.prometheus.FoxCollector's poll_success/poll_errors so the two
+        # publish paths (MQTT push, Prometheus pull) are consistent to reason about.
+        self.poll_success = 0
+        self.poll_errors = 0
+        self.last_success: float = 0.0
 
     def _connect(self) -> Any:
         try:
@@ -316,34 +352,105 @@ class MqttPublisher:
         if cfg.username:
             client.username_pw_set(cfg.username, cfg.password)
         client.will_set(availability_topic(cfg), AVAILABILITY_OFFLINE, retain=True)
-        client.connect(cfg.host, cfg.port)
+
+        attempt = 0
+        while True:
+            try:
+                client.connect(cfg.host, cfg.port)
+                break
+            except OSError as exc:
+                attempt += 1
+                delay = self._backoff(attempt)
+                _log.warning(
+                    "MQTT broker %s:%s unreachable (attempt %d): %s -- retrying in %.0fs",
+                    cfg.host,
+                    cfg.port,
+                    attempt,
+                    exc,
+                    delay,
+                )
+                time.sleep(delay)
+
         client.loop_start()
         client.publish(availability_topic(cfg), AVAILABILITY_ONLINE, retain=True)
         return client
 
     def publish_discovery(self) -> None:
+        """Publish retained discovery config. Raises :class:`FoxError` on failure.
+
+        Left raising (unlike :meth:`run`'s loop body) so callers/tests can treat
+        a single discovery attempt as pass/fail; :meth:`run` is what retries it.
+        """
         system: SystemInfo = self._fox.system
         for topic, payload in build_discovery(system, self._cfg):
             self._client.publish(topic, json.dumps(payload), retain=True)
 
     def publish_once(self) -> None:
+        """Publish one round of state topics. Raises :class:`FoxError` on failure."""
         for topic, payload in build_states(collect_views(self._fox), self._cfg):
             self._client.publish(topic, payload, retain=self._cfg.retain_state)
 
-    def run(self, *, iterations: int | None = None) -> None:
-        """Connect, announce discovery, then publish states every ``interval`` s."""
-        import time
+    def _set_availability(self, state: str) -> None:
+        self._client.publish(availability_topic(self._cfg), state, retain=True)
 
-        self._client = self._connect()
+    def _backoff(self, consecutive_failures: int) -> float:
+        """Exponential backoff off the poll interval, capped at ``max_backoff``."""
+        cfg = self._cfg
+        scaled = cfg.interval * (2 ** min(consecutive_failures, 6))
+        return float(min(scaled, cfg.max_backoff))
+
+    def run(self, *, iterations: int | None = None) -> None:
+        """Connect, announce discovery, then publish states every ``interval`` s.
+
+        Runs until ``iterations`` polls complete (or forever, if ``None``).
+        Device/broker outages degrade to "unavailable" + retry, they never end
+        the loop -- see the class docstring.
+
+        If ``self._client`` was already set (dependency injection -- tests, or a
+        caller sharing one paho client across publishers), :meth:`_connect` is
+        skipped rather than reconnecting.
+        """
+        if self._client is None:
+            self._client = self._connect()
+        discovery_done = False
+        online = True  # _connect() already published "online"
+        consecutive_errors = 0
+        count = 0
         try:
-            self.publish_discovery()
-            count = 0
             while iterations is None or count < iterations:
-                self.publish_once()
+                if not discovery_done:
+                    try:
+                        self.publish_discovery()
+                        discovery_done = True
+                        _log.info("discovery published")
+                    except FoxError as exc:
+                        _log.warning(
+                            "discovery not published yet (device unreachable?): %s", exc
+                        )
+
+                try:
+                    self.publish_once()
+                except FoxError as exc:
+                    self.poll_errors += 1
+                    consecutive_errors += 1
+                    _log.warning("poll failed (%d consecutive): %s", consecutive_errors, exc)
+                    if online:
+                        self._set_availability(AVAILABILITY_OFFLINE)
+                        online = False
+                else:
+                    self.poll_success += 1
+                    self.last_success = time.time()
+                    if consecutive_errors:
+                        _log.info("device recovered after %d failed polls", consecutive_errors)
+                    consecutive_errors = 0
+                    if not online:
+                        self._set_availability(AVAILABILITY_ONLINE)
+                        online = True
+
                 count += 1
                 if iterations is not None and count >= iterations:
                     break
-                time.sleep(self._cfg.interval)
+                time.sleep(self._backoff(consecutive_errors))
         finally:
             cfg = self._cfg
             self._client.publish(availability_topic(cfg), AVAILABILITY_OFFLINE, retain=True)
