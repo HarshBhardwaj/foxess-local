@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import re
 
+from .ems import EmsController
 from .encoder import encode_field_write
 from .errors import (
     FoxModelNotFound,
@@ -33,7 +34,7 @@ from .measurements import (
     SolarInfo,
     SystemInfo,
 )
-from .models import DecodedModel, FoxField, WriteResult
+from .models import DecodedModel, FoxField, FoxModelDef, WriteResult
 from .registry import ModelRegistry, default_registry
 from .transport import DataResponse, Transport
 
@@ -75,6 +76,15 @@ class FoxESS:
     def registry(self) -> ModelRegistry:
         return self._registry
 
+    @property
+    def ems(self) -> EmsController:
+        """Typed EMS (battery/grid strategy) controller for the inverter (Phase 11)."""
+        cached = getattr(self, "_ems", None)
+        if cached is None:
+            cached = EmsController(self, ADDR_INVERTER)
+            self._ems = cached
+        return cached
+
     # -- write support (Phase 11) ----------------------------------------------
     # Disabled by default. Requires allow_writes=True AND an explicit confirm=True
     # per call. dry_run builds and returns the exact frame without sending.
@@ -106,7 +116,7 @@ class FoxESS:
             raise FoxWriteNotAllowed(f"model {model_id} has no field {field_name!r}")
         if not field.writable:
             raise FoxWriteNotAllowed(f"field {field_name!r} is read-only (no rw flag)")
-        _validate_range(field, value)
+        _validate_range(field, value, model)
 
         # Resolve dynamic (sf) scale factors from the current device reading.
         decoded = None
@@ -218,8 +228,17 @@ class FoxESS:
         )
 
 
-def _validate_range(field: FoxField, value: object) -> None:
-    """Best-effort range/enum validation from the field's own metadata."""
+def _validate_range(
+    field: FoxField, value: object, model: FoxModelDef | None = None
+) -> None:
+    """Best-effort range/enum validation from the field's own metadata.
+
+    ``hint`` bounds are expressed in **raw register units**. For scaled fields
+    the caller passes a human value (e.g. 15 %), so we convert it to raw units
+    with the field's (constant, ``sfm``) scale before comparing. Dynamic (``sf``)
+    scales cannot be resolved without a device read, so their hint check is
+    skipped rather than applied incorrectly.
+    """
     if field.enum:
         allowed = {m.value for m in field.enum}
         labels = {m.label for m in field.enum}
@@ -236,5 +255,15 @@ def _validate_range(field: FoxField, value: object) -> None:
                 numeric = float(value)  # type: ignore[arg-type]
             except (TypeError, ValueError):
                 return
+            if field.sf_ref and model is not None:
+                from .encoder import resolve_scale
+
+                scale = resolve_scale(field, model, None)
+                if scale is None:
+                    return  # dynamic sf: cannot validate offline
+                op, factor = scale
+                numeric = numeric * factor if op == "div" else numeric / factor
             if not lo <= numeric <= hi:
-                raise FoxWriteRangeError(f"{field.name}: {value!r} outside {lo}..{hi}")
+                raise FoxWriteRangeError(
+                    f"{field.name}: {value!r} outside {lo}..{hi} (raw units)"
+                )
