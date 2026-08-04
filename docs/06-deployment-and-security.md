@@ -37,7 +37,7 @@ Run a single integration instead of the API:
 
 ```bash
 export FOX_HOST=<your-device-ip>
-docker run --rm -e FOX_HOST="$FOX_HOST" foxess-local:0.3.0 \
+docker run --rm -e FOX_HOST="$FOX_HOST" foxess-local:0.4.0 \
   fox exporter "$FOX_HOST" --port 9110
 ```
 

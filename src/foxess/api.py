@@ -56,7 +56,7 @@ def create_app(provider: FoxProvider | None = None) -> Any:
     get_provider = provider or _default_provider()
     app = FastAPI(
         title="foxess-local",
-        version="0.3.0",
+        version="0.4.0",
         description="Read-only local access to FoxESS Smart WiLAN devices.",
     )
     app.add_middleware(

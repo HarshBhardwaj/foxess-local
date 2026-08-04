@@ -24,9 +24,10 @@ endpoint and decodes the SunSpec/Modbus frames locally.
 - ✅ **WebSocket streaming** — `/api/v1/ws`, versioned envelopes, subscription filtering, heartbeats
 - ✅ CLI — `models`, `decode`, `read`, `scan`, `serve`, `mqtt`, `exporter`
 - ✅ **Write support** — verified encoder, disabled-by-default, opt-in, dry-run, validated (Phase 11)
+- ✅ **EMS control** — `fox.ems` work mode, min/max SoC, forced-charge schedules (Phase 11)
 - ✅ **Docker** stack + **GitHub Actions CI** + pre-commit + docs + release checklist
 
-All 11 phases of the requirements document are implemented. 61 tests (no
+All 11 phases of the requirements document are implemented. 78+ tests (no
 hardware required), ruff + mypy-strict clean.
 
 Cross-checked against FoxCloud: local battery SoC read **80.0%** vs cloud **80%**
@@ -62,7 +63,24 @@ with FoxESS(os.environ["FOX_HOST"]) as fox:
     print(fox.battery.soc_percent)   # 80.0
     print(fox.battery.power_w)        # -2668  (negative = charging)
     print(fox.solar.power_w)          # 2685
-    print(fox.grid.frequency_hz)      # 60.01
+    print(fox.grid.power_w)           # net grid W (negative = import)
+    print(fox.ac.frequency_hz)        # 60.01  (inverter AC terminal)
+```
+
+## EMS control (writes — opt-in)
+
+Typed convenience over models **65026** (EMS) and **65034** (EMS-Manual).
+Inherits the same safety model as `write_field` (disabled-by-default, dry-run,
+`confirm=True` required). See `docs/05-write-path.md`.
+
+```python
+import os
+from foxess import FoxESS
+
+with FoxESS(os.environ["FOX_HOST"], allow_writes=True) as fox:
+    print(fox.ems.read())                          # EmsState snapshot
+    print(fox.ems.set_min_soc(15, dry_run=True))   # preview frame only
+    # fox.ems.set_work_mode("tou", confirm=True)   # real write
 ```
 
 Async (concurrent model reads under the hood):
