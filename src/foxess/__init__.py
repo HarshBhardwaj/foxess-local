@@ -11,7 +11,7 @@ from .aio import AsyncFoxESS, AsyncTransport
 from .client import ADDR_GATEWAY, ADDR_INVERTER, FoxESS
 from .crc import crc16
 from .decoder import decode, decode_payload
-from .ems import EmsController, EmsState, ForceChargeSlot, WORK_MODES
+from .ems import WORK_MODES, EmsController, EmsState, ForceChargeSlot
 from .encoder import FoxEncodeError, build_write_frame, encode_field_write
 from .errors import (
     FoxCRCError,
