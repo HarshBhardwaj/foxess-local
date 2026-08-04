@@ -6,6 +6,22 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-03
+
+Phase 11 EMS convenience layer, plus MQTT poll-loop resilience.
+
+### Added
+
+- **`fox.ems` (`EmsController`)** — typed reads/writes for home-automation EMS
+  controls, wrapping the verified `write_field` primitive:
+  - `read()` → `EmsState` (work mode, min/max SoC, charge-by-grid, backup SoC)
+  - `set_work_mode()` — `self-use` | `force` | `manual` | `tou` | `backup`
+  - `set_min_soc()` / `set_max_soc()` — firmware ranges 5–20 % / 80–100 %
+  - `force_charge()` / `disable_force_charge()` / `read_force_charge()` —
+    model **65034** schedule slots (enable written last for safer partial apply)
+- Public exports: `EmsController`, `EmsState`, `ForceChargeSlot`, `WORK_MODES`.
+- Fixture-backed tests (`tests/test_ems.py`) for decode + dry-run write frames.
+
 ### Fixed
 
 - **`fox mqtt` / the Home Assistant app no longer crash-loop on a transient
@@ -118,6 +134,7 @@ Initial public SDK release.
 - Documented that both read and write local APIs are effectively
   unauthenticated; deployment guide covers VLAN/firewall/VPN isolation.
 
+[0.4.0]: https://github.com/HarshBhardwaj/foxess-local/releases/tag/v0.4.0
 [0.3.0]: https://github.com/HarshBhardwaj/foxess-local/releases/tag/v0.3.0
 [0.2.0]: https://github.com/HarshBhardwaj/foxess-local/releases/tag/v0.2.0
 [0.1.0]: https://github.com/HarshBhardwaj/foxess-local/releases/tag/v0.1.0

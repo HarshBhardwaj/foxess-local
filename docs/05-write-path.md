@@ -103,9 +103,42 @@ The register map flags **1,359 writable fields**. Many are grid-protection and
 energy-control parameters where wrong values are unsafe or can violate grid
 codes: model **704 DER AC Controls**, **705–712** (Volt-Var / Volt-Watt / trip
 curves / freq-droop), **65002 Param**, **65010 EMS-TOU**, **65023 ExportLimit**,
-**65034 EMS-Manual**, **65012 Time & Country**. These are intentionally **not**
-surfaced through any convenience API. Treat all writes as experimental until
-validated on a specific firmware, and never expose them casually.
+**65012 Time & Country**. These are intentionally **not** surfaced through any
+convenience API. Treat all writes as experimental until validated on a specific
+firmware, and never expose them casually.
+
+A **narrow** subset of EMS strategy fields is exposed via
+:class:`foxess.ems.EmsController` (`fox.ems`) — work mode, on-grid min/max SoC,
+and forced-charge schedules from models **65026** / **65034**. That wrapper
+still requires `allow_writes=True` + `confirm=True` (or `dry_run=True` to
+preview). Forced-discharge slots and other EMS-Manual fields remain unsurfaced.
+
+## 6. EMS convenience API (`fox.ems`)
+
+```python
+import os
+from foxess import FoxESS
+
+with FoxESS(os.environ["FOX_HOST"], allow_writes=True) as fox:
+    st = fox.ems.read()
+    print(st.mode, st.min_soc_pct, st.max_soc_pct)
+
+    # Preview only — no bytes leave the host
+    fox.ems.set_min_soc(15, dry_run=True)
+    fox.ems.set_work_mode("tou", dry_run=True)
+    fox.ems.force_charge(
+        start=(0, 0), end=(5, 0), target_soc=90, power_kw=3.0, dry_run=True,
+    )
+
+    # Real writes (confirm required):
+    # fox.ems.set_min_soc(15, confirm=True)
+```
+
+Work modes: `self-use`, `force`, `manual`, `tou`, `backup`. Firmware SoC
+ranges: min 5–20 %, max 80–100 %. Multi-field `force_charge` writes schedule
+registers **before** the enable flag so a partial apply is never left enabled
+with stale times — always `read_force_charge` back to confirm (open item: whether
+the inverter applies the group atomically; see §8).
 
 ## 7. Confirmed write round-trip (hardware-in-the-loop)
 
@@ -127,6 +160,7 @@ detection (`result[2:4] == "10"`), and the `mstype: 3` write marker.
 ## 8. Open items
 
 - Characterise `param_set` vs `modbus_rw` (which parameters use which path).
-- Determine whether multi-register / `rwl` grouped writes behave identically.
+- Determine whether multi-register / `rwl` grouped writes (and EMS
+  `force_charge` field groups) behave atomically on the inverter.
 - Investigate cloud-sync side effects of local writes.
 - Resolve the `65015 Ileak3Value` scale (see verification status doc).
