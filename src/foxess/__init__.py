@@ -11,6 +11,7 @@ from .aio import AsyncFoxESS, AsyncTransport
 from .client import ADDR_GATEWAY, ADDR_INVERTER, FoxESS
 from .crc import crc16
 from .decoder import decode, decode_payload
+from .ems import EmsController, EmsState, ForceChargeSlot, WORK_MODES
 from .encoder import FoxEncodeError, build_write_frame, encode_field_write
 from .errors import (
     FoxCRCError,
@@ -46,6 +47,10 @@ from .registry import ModelRegistry, default_registry
 __version__ = "0.3.0"
 
 __all__ = [
+    "WORK_MODES",
+    "ForceChargeSlot",
+    "EmsState",
+    "EmsController",
     "ADDR_GATEWAY",
     "ADDR_INVERTER",
     "AcMeasurement",
